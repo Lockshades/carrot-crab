@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <math.h>
 
 int main() 
 {
@@ -52,7 +53,7 @@ int main()
         }
 
         max_input_range+=1;
-        for (int s = 0; s < 3; s++)
+        for (int s = 0; s < 3; s++) // lottery input loop
         {
          lott_array[s] = rand() % max_input_range; // max input range +1 allows system to generate 0 as usual but also generate 9 in this case(29%10=9)
         }
@@ -63,17 +64,19 @@ int main()
 
 
         // below is better and faster, but rigid(isnt suitable for when the number of lottery digits needs to be changed). I'll fix this later as the time constraint for me is low
-        printf(" The lottery numbers are: (%d, %d, %d);\n", lott_array[1], lott_array[2], lott_array[3]);
+        printf(" The lottery numbers are: (%d, %d, %d);\n", lott_array[0], lott_array[1], lott_array[2]);
+        printf("Your own guesses are: (%d,%d,%d);\n", user_array[0], user_array[1], user_array[2]);
         
         // Check for winning condition
-        int matches_power = 1, matches_multiply = 0; // these variables allow for raising to power when there is a jackpot, and multply when there is no jackpot but also no loss
+        float matches_power = 1;
+        int matches_multiply = 0; // these variables allow for raising to power when there is a jackpot, and multply when there is no jackpot but also no loss
         for (int i = 0; i < 3; i++) 
         {
             if (lott_array[i] == user_array[i]) // check for jackpot which is when the user input in the same order of the lottery number.
             {
-                matches_power += 2; // multiply power by 2 for each matching number
+                matches_power += 0.3; // multiply power by 2 for each matching number
             }
-            for (int j = 0; j < 3; j++) 
+            for (int j = 0; j < 3; j++) // simultanuously check the other rows
             {
                 if (lott_array[i] == user_array[j]) 
                 {
@@ -85,24 +88,34 @@ int main()
         if(matches_power>1)// when 2 number are in the same order
         {
             
-            jackpot = bet_amount^matches_power;
-            balance+=jackpot;
+            jackpot = pow(bet_amount, matches_power);
             printf(" Congratulations on winning the jackpot of ₦%d!\n",jackpot);
+            balance+=jackpot;
         }
         else if (matches_power < 1)
         {
             printf(" You didn't win any Jackpot in this round. Better luck next time\n");
+            jackpot = 0;
         }
 
         if (matches_multiply > 0) // meaning the nuber exists but in different order
         {
             normal_win = bet_amount*matches_multiply;
+            printf(" You won  ₦%i!\n",normal_win);
             balance+=normal_win;
-            printf(" You won  ₦%d!\n",normal_win);
+            
+        }
+        else
+        {
+            printf("You lost this round and you lost %d", bet_amount); // reports your loss and how much is lost
         }
 
         int total = jackpot+normal_win;
-        printf(" you won %d in total this round.\n", total);
+        if (total>0)
+        {
+        printf(" you won %i in total this round so your balance is ₦%d.\n", total, balance);
+        }
+
 
         int exit = 0; //needs to be initialized in this way so it doesnt auto exit
         printf(" would you like to exit? 0 for NO and 1 for YES.");
@@ -111,6 +124,8 @@ int main()
         {
             break; // breaking makes the While loop stop and then your the next line after sadi while loop is run.
         }
+
+
         
     }
 

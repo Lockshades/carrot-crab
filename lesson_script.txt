@@ -1,0 +1,236 @@
+STANDARD DEVIATION — FULL TEACHING SCRIPT
+=================================================================
+Five-scene video lesson.  Each section is a separate teacher script.
+
+=================================================================
+SCENE 1: DATASET SPREAD
+Duration: ~18 s   |   Concept: Same mean — completely different spread
+Video:    /home/user/carrot-crab/media/videos/std_dev_viz/480p15/DatasetIntroScene.mp4
+=================================================================
+
+── PRE-VIDEO (before pressing play) ──────────────────────
+HOOK  Ask the class before touching anything:
+  'Two factories both report an average output of 10 units per hour.
+   Are they equally reliable?  Why or why not?'
+
+Allow 30–60 seconds of open debate — do not correct anyone yet.
+
+Then say:
+  'Let me show you three real datasets that share exactly the same
+   average.  Watch the tables carefully — especially the bottom row.'
+
+FOCUS POINT  Tell students to watch for the x̄ row at the bottom of
+each table and note that all three read 10.0.
+
+── DURING-VIDEO CUES ──────────────────────────────────────
+  [0:04]  Tables appear — ask: 'What does the xᵢ column represent?'
+  [0:10]  Mean row (x̄ = 10.0) is highlighted across all three — PAUSE here.
+          Say: 'Three completely different datasets. Identical averages.
+                The mean alone is hiding something important.'
+  [0:15]  Bar charts appear — ask: 'Which dataset looks most reliable to
+                you?  Could you predict the next value in each one?'
+  [0:18]  Breadcrumb text — read it aloud as a preview sentence.
+
+── POST-VIDEO DISCUSSION ──────────────────────────────────
+KEY TAKEAWAY  The mean is not enough on its own.
+
+Discussion:
+  Ask: 'What single number could tell us how spread out a dataset is?'
+  Accept any intuitive answer — range, gap, average distance, etc.
+  Write their suggestions on the board.
+
+Bridge to Scene 2:
+  'One of those suggestions is exactly right — average distance from the mean.
+   But we will see a problem with that idea in a moment.  Watch Scene 2.'
+
+KEY QUESTION:  If two datasets share the same mean, what else must we compare?
+
+=================================================================
+SCENE 2: DISPERSION FROM THE MEAN
+Duration: ~22 s   |   Concept: Deviation = signed distance from x̄
+Video:    /home/user/carrot-crab/media/videos/std_dev_viz/480p15/DispersionScene.mp4
+=================================================================
+
+── PRE-VIDEO (before pressing play) ──────────────────────
+RECAP  Say:
+  'In Scene 1 we saw three datasets with identical means — x̄ = 10.
+   Scene 2 will show you what we mean by each value being close to
+   or far from that mean.'
+
+VOCABULARY  Introduce these terms before playing:
+  • deviation  =  xᵢ − x̄   (positive if above mean, negative if below)
+  • The table at the start will PROVE both datasets have x̄ = 10.
+
+WATCH FOR  Tell students:
+  'Every dot starts on the mean marker (x̄ = 10) and flies to its
+   actual value.  The arrow label shows the signed distance: + or −.'
+
+── DURING-VIDEO CUES ──────────────────────────────────────
+  [0:05]  Comparison table — confirm Σ=100, n=10, x̄=10.0 for BOTH rows.
+                Say: 'Proof on screen.  Same mean.  Different story.'
+  [0:10]  Dots animated outward — say: 'Each dot travels exactly (xᵢ − 10) units.'
+  [0:17]  Arrow labels (±N) appear — ask:
+                'Which row has bigger arrows?  What does that tell us about σ?'
+  [0:21]  'Wider spread → Higher σ' footer — students copy this phrase.
+
+── POST-VIDEO DISCUSSION ──────────────────────────────────
+CRITICAL QUESTION  Ask the class:
+  'If I calculate the average of ALL the deviations (+1, −1, +2, −2 …),
+   what do I get?'
+
+Let them work it out (answer: always 0 — they cancel).
+
+Then ask:
+  'So how do we stop them cancelling?  How do we keep the distances positive?'
+  Expected answers: absolute value, squaring.
+
+Bridge to Scene 3:
+  'Scene 3 uses squaring.  We will see exactly why that choice leads us to σ.'
+
+KEY QUESTION:  Why does averaging raw deviations always return zero?
+
+=================================================================
+SCENE 3: BUILDING THE FORMULA
+Duration: ~16 s   |   Concept: σ = √( Σ(xᵢ − x̄)² / n )
+Video:    /home/user/carrot-crab/media/videos/std_dev_viz/480p15/StdDevFormulaScene.mp4
+=================================================================
+
+── PRE-VIDEO (before pressing play) ──────────────────────
+RECAP  Say:
+  'Raw deviations always sum to zero.  Squaring every deviation fixes that
+   and also magnifies large outliers — making σ sensitive to extremes.'
+
+LAYOUT  Describe what students will see:
+  LEFT  — a computation table built row by row:
+          xᵢ  |  xᵢ − x̄  |  (xᵢ − x̄)²
+  RIGHT — the running derivation:
+          Σ → Variance → Formula → σ result
+
+DATASET  [2, 4, 4, 4, 5, 5, 7, 9]   x̄ = 5
+
+Tell students: keep a pencil ready — copy the formula when it appears.
+
+── DURING-VIDEO CUES ──────────────────────────────────────
+  [0:04]  Column headers appear — read them aloud: xᵢ, xᵢ−x̄, (xᵢ−x̄)².
+  [0:05]  Rows fill in one by one — students can verify each square mentally.
+                E.g. row 1: xᵢ=2, deviation=2−5=−3, square=(−3)²=9.
+  [0:13]  Σ row = 32 appears — ask: 'What do we do with this sum next?'
+  [0:14]  Variance = 32/8 = 4.00 — say: 'Dividing by n gives the AVERAGE squared deviation.'
+  [0:15]  σ = √4.00 ≈ 2.00 boxed in red — ask: 'Why take the square root at the end?'
+                Answer: to return to the original unit (kg, °C, €, etc.)
+  [0:16]  Bottom note: 'every value is ~2.0 units from the mean on average'
+                This is the plain-English meaning of σ.  Students copy it.
+
+── POST-VIDEO DISCUSSION ──────────────────────────────────
+FORMULA RECALL  Students write from memory:
+  σ = √( Σ(xᵢ − x̄)² / n )
+
+WORKED CHECK  Apply it together to the STABLE dataset from Scene 1:
+  Data: [9,10,10,11,10,9,10,11,10,10]   x̄ = 10
+  Σ(xᵢ−10)² = 1+0+0+1+0+1+0+1+0+0 = 4
+  Variance  = 4/10 = 0.40
+  σ         = √0.40 ≈ 0.63  ← matches Scene 1 label
+
+EXTENSION  Discuss population σ vs sample s (÷n vs ÷(n−1)).
+
+Bridge to Scene 4:
+  'Now we can compute σ.  But what does it LOOK like on a graph?
+   Scene 4 puts σ = 0.6 next to σ = 5.7 side by side.'
+
+KEY QUESTION:  Why square the deviations instead of taking absolute values?
+
+=================================================================
+SCENE 4: Σ AND DATA INSTABILITY
+Duration: ~16 s   |   Concept: Higher σ = wider swings = less predictable
+Video:    /home/user/carrot-crab/media/videos/std_dev_viz/480p15/StabilityCompareScene.mp4
+=================================================================
+
+── PRE-VIDEO (before pressing play) ──────────────────────
+PREDICTION  Write on the board before playing:
+  Low σ ≈ 0.6   →  graph looks like  ___
+  High σ ≈ 5.7  →  graph looks like  ___
+
+Ask students to predict the shape and take a show-of-hands vote.
+
+Say:
+  'Scene 4 will show a stats table first — confirm the means are equal.
+   Then the graphs appear with a numbered y-axis so you can read actual values.
+   The dashed line marks x̄ on each graph.'
+
+── DURING-VIDEO CUES ──────────────────────────────────────
+  [0:03]  Stats table — read σ values aloud.  Confirm x̄ ≈ 10 for both.
+                Ask: 'Which dataset would you feel comfortable making decisions from?'
+  [0:08]  Both axes appear with y-ticks 0,5,10,15,20 — note the scale is identical.
+  [0:09]  Dashed mean lines at y=10 — say: 'Same mean.  Watch what happens next.'
+  [0:12]  Lines drawn simultaneously — give students 3 seconds of silent observation.
+  [0:15]  Dots appear, then 'Higher σ → Wider swings' message — students add to notes.
+
+── POST-VIDEO DISCUSSION ──────────────────────────────────
+ANALOGY SORT  Read each scenario; students call out 'low σ' or 'high σ':
+  • A rod-cutting machine produces 10 cm rods ± 0.05 mm    → low σ
+  • A student's test scores: 30, 95, 42, 88, 61            → high σ
+  • A river's flow rate during calm summer days             → low σ
+  • Daily number of emergency calls at a hospital           → high σ
+
+KEY INSIGHT  'A high mean with high σ can be more dangerous than a low mean with low σ.'
+  Example: average drug dose is correct but varies wildly → some patients underdose,
+           others overdose.
+
+Bridge to Scene 5:
+  'Scene 5 puts this in a financial context where σ has an official name: volatility.'
+
+KEY QUESTION:  Can you name a real-world situation where high σ would be catastrophic?
+
+=================================================================
+SCENE 5: REAL-WORLD IMPACT
+Duration: ~17 s   |   Concept: σ = the mathematical definition of risk
+Video:    /home/user/carrot-crab/media/videos/std_dev_viz/480p15/RealWorldScene.mp4
+=================================================================
+
+── PRE-VIDEO (before pressing play) ──────────────────────
+CONTEXT  Set the scene:
+  'Imagine you have $1,000 to invest for one year.
+   You find two assets.  Both have the same average daily gain: +0.3.',
+  'Which do you choose?'
+
+Let students argue briefly — most will say 'they're the same'.
+
+Say:
+  'The stats table will appear first — look at the Daily σ column.
+   Then the 30-day price chart will draw itself, with a numbered y-axis
+   so you can read exact prices.'
+
+── DURING-VIDEO CUES ──────────────────────────────────────
+  [0:04]  Stats table — read Daily σ aloud.  Ask: 'Which is riskier before you see the graph?'
+  [0:09]  Chart axes appear — note y-axis range 80–120 and x-axis day 0–29.
+  [0:12]  Both lines draw — green (A) climbs steadily, red (B) swings wildly.
+                Give students 3 seconds of silent comparison.
+  [0:15]  'Low σ → lower risk' callout box — students copy as the lesson summary statement.
+
+── POST-VIDEO DISCUSSION ──────────────────────────────────
+CLASS DISCUSSION  (choose 1–2 depending on time):
+
+  1. MEDICINE
+     'A drug must deliver 50 mg.  Batch A: σ = 0.2 mg.  Batch B: σ = 8 mg.
+      Which batch is safe to administer?  Why?'
+
+  2. AVIATION
+     'Engine thrust has σ = 1%.  Cabin temperature has σ = 5°C.
+      Which tolerance is acceptable?  Would you swap them?'
+
+  3. CLIMATE
+     'Two cities both average 20°C.  City A: σ = 2°C.  City B: σ = 10°C.
+      Where would you rather live?'
+
+WRAP-UP STATEMENT  Students write this in their own words:
+  'Standard deviation σ measures how much data deviates from its mean.
+   The higher σ is, the more unstable and unpredictable the data becomes.
+   In finance σ is called volatility; in engineering it is called tolerance.
+   Wherever decisions depend on data, σ measures how much you can trust
+   the mean as a representative value.'
+
+ASSESSMENT IDEA  Give two datasets with the same mean.
+  Ask students to compute σ for each and write one paragraph explaining
+  which dataset is more reliable and why.
+
+KEY QUESTION:  Name three domains outside finance where high σ would be dangerous.

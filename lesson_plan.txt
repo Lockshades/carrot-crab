@@ -1,0 +1,125 @@
+STANDARD DEVIATION — LESSON PLAN
+============================================================
+
+A five-scene video study showing how higher σ means higher data instability.
+
+SCENE 1: DATASET SPREAD
+--------------------------------------------------
+Duration : ~8 s
+Concept  : Same mean, different spread
+Video    : /home/user/carrot-crab/media/videos/std_dev_viz/480p15/DatasetIntroScene.mp4
+
+SUMMARY
+Three bar charts are shown side by side, all with the same mean but
+progressively wider spreads: Stable (σ≈0.5), Moderate (σ≈2.5), Chaotic
+(σ≈5.5). A dashed mean line runs through each.
+
+TALKING POINTS
+  1. Ask students: 'Do these three datasets feel the same to you?'
+  2. Point out: the mean (average) is identical in all three — yet they look completely different.
+  3. Introduce vocabulary: 'spread', 'dispersion', 'variation'.
+  4. Question: 'How would you measure how spread out the data is?'
+
+KEY QUESTION: If two factories report the same average output, can we trust them equally?
+
+BRIDGE: Lead into Scene 2 — let's measure that spread mathematically.
+
+============================================================
+
+SCENE 2: DISPERSION FROM THE MEAN
+--------------------------------------------------
+Duration : ~13 s
+Concept  : Deviation = distance from the mean
+Video    : /home/user/carrot-crab/media/videos/std_dev_viz/480p15/DispersionScene.mp4
+
+SUMMARY
+Dots start at the mean (x̄) then animate outward to their actual
+values. Arrows show the deviation of each point. Low σ dots barely
+move; high σ dots fly to the edges of the screen.
+
+TALKING POINTS
+  1. Watch: every dot starts at the same place — the mean.
+  2. Each dot travels a distance = (value − mean). That distance is the deviation.
+  3. Low σ row: dots cluster tight. High σ row: dots scatter far.
+  4. Key insight: we need ONE number that summarises all those distances.
+  5. Why not just average the raw deviations? (They cancel out to 0!)
+
+KEY QUESTION: If deviations always sum to zero, how do we stop them cancelling?
+
+BRIDGE: Answer: square them — leads directly into Scene 3.
+
+============================================================
+
+SCENE 3: BUILDING THE FORMULA
+--------------------------------------------------
+Duration : ~15 s
+Concept  : σ = √( Σ(xᵢ − x̄)² / n )
+Video    : /home/user/carrot-crab/media/videos/std_dev_viz/480p15/StdDevFormulaScene.mp4
+
+SUMMARY
+Four-step animated construction of the standard deviation formula:
+dataset → mean → squared deviations → final σ formula with a live
+numeric worked example (σ = 2.00).
+
+TALKING POINTS
+  1. Step 1: Start with raw data [2,4,4,4,5,5,7,9].
+  2. Step 2: Calculate mean x̄ = 40/8 = 5.
+  3. Step 3: Subtract mean from each value, then SQUARE — squaring makes all values positive and amplifies large deviations.
+  4. Step 4: Average the squares → variance. Take the square root → back in original units → σ.
+  5. Stress: the square root is what puts σ back in the same unit as the data (e.g. kg, €, °C).
+
+KEY QUESTION: Why do we square the deviations instead of taking absolute values?
+
+BRIDGE: Squaring has nice mathematical properties (differentiable everywhere) and punishes large deviations more. Now let's see what different σ values LOOK like.
+
+============================================================
+
+SCENE 4: Σ AND DATA INSTABILITY
+--------------------------------------------------
+Duration : ~13 s
+Concept  : Higher σ = wider swings = less predictable
+Video    : /home/user/carrot-crab/media/videos/std_dev_viz/480p15/StabilityCompareScene.mp4
+
+SUMMARY
+Side-by-side animated line graphs. Left: low σ=0.50 (flat, stable).
+Right: high σ=5.68 (jagged, chaotic). Both have the same mean. Curly
+braces mark the spread. Caption: Higher σ → Wider swings → Less
+predictable.
+
+TALKING POINTS
+  1. This is the core visual — same mean, one line flat, one line wild.
+  2. Low σ: you can predict the next value with confidence.
+  3. High σ: the next value could be almost anywhere.
+  4. Use analogy: a student with consistent 70% scores vs one swinging from 20% to 100%.
+  5. Manufacturing: a machine with high σ produces many defective parts even if the average is 'on target'.
+
+KEY QUESTION: In which scenario would you feel more comfortable making a decision based on the data?
+
+BRIDGE: Let's see a real-world domain where this matters enormously — finance.
+
+============================================================
+
+SCENE 5: REAL-WORLD IMPACT
+--------------------------------------------------
+Duration : ~11 s
+Concept  : σ as a measure of risk / volatility
+Video    : /home/user/carrot-crab/media/videos/std_dev_viz/480p15/RealWorldScene.mp4
+
+SUMMARY
+Two simulated assets tracked over 30 time steps. Asset A (green,
+σ≈0.9) trends steadily upward. Asset B (red, σ≈3.7) crashes and spikes
+wildly — same average return. A callout box: Low σ = predictable, low
+risk. High σ = unpredictable, high risk.
+
+TALKING POINTS
+  1. Both assets have the same average return — so which would YOU invest in?
+  2. Asset A: calm, predictable growth. Asset B: could double or crash to zero.
+  3. In finance, σ IS the definition of volatility / risk.
+  4. Other domains: weather forecasting, quality control, medical test reliability, sports performance.
+  5. Summary: σ quantifies how much we can TRUST the mean as a representative value.
+
+KEY QUESTION: Name three fields outside finance where high standard deviation would be dangerous.
+
+BRIDGE: Discussion answers could include: medicine (drug dosage consistency), aviation (component tolerances), climate science (extreme weather events).
+
+============================================================

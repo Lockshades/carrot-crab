@@ -46,12 +46,13 @@ from rich.rule import Rule
 from rich.table import Table
 from rich.text import Text
 
-CONSOLE   = Console()
-ROOT      = Path(__file__).parent
-VIDEO_DIR = ROOT / "media" / "videos" / "std_dev_viz" / "480p15"
+CONSOLE      = Console()
+ROOT         = Path(__file__).parent
+VIDEO_DIR    = ROOT / "media" / "videos" / "std_dev_viz" / "480p15"
+CB_VIDEO_DIR = ROOT / "media" / "videos" / "consumer_behaviour" / "480p15"
 
-# ── colour map (matches video palette) ───────────────────────────────────────
-SCENE_COLOURS = ["green", "yellow", "cyan", "magenta", "red"]
+# ── colour map (up to 7 scenes) ───────────────────────────────────────────────
+SCENE_COLOURS = ["green", "yellow", "cyan", "magenta", "red", "blue", "white"]
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Teaching scripts
@@ -301,6 +302,325 @@ SCENES = [
     },
 ]
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Consumer Behaviour teaching scripts  (7 scenes)
+# ─────────────────────────────────────────────────────────────────────────────
+CB_SCENES = [
+    # ── 1 ─────────────────────────────────────────────────────────────────────
+    {
+        "number":   1,
+        "title":    "Utility: TU, MU & AU",
+        "file":     "UtilityScene.mp4",
+        "duration": "~22 s",
+        "concept":  "Law of Diminishing Marginal Utility",
+        "pre": [
+            "HOOK  Ask before pressing play:",
+            "  'If you eat one slice of pizza you are very happy.",
+            "   After six slices, are you still equally happy with each one?'",
+            "",
+            "Allow 30 seconds of discussion.",
+            "",
+            "Then say:",
+            "  'We are going to measure that falling satisfaction using numbers.",
+            "   Watch the table — pay close attention to the MU column.'",
+            "",
+            "FOCUS POINT  MU column colour: yellow = positive, red = negative.",
+        ],
+        "cues": [
+            ("0:04", "Table builds row by row — call out MU values as they appear."),
+            ("0:12", "MU = 0 row highlighted at Q=6.",
+                     "Say: 'This is the saturation point — no extra satisfaction.'"),
+            ("0:16", "Negative MU at Q=7 flagged.",
+                     "Say: 'Beyond saturation, more becomes a burden — disutility.'"),
+            ("0:20", "Dual-curve chart — TU and MU plotted together.",
+                     "Point out: TU is maximum exactly where MU crosses zero."),
+            ("0:22", "Breadcrumb appears — read aloud."),
+        ],
+        "post": [
+            "KEY TAKEAWAY  Each additional unit gives less extra satisfaction.",
+            "",
+            "Discussion:",
+            "  'Can you give a real-life example of diminishing MU?'",
+            "  'At what point did your MU become zero or negative?'",
+            "",
+            "Assessment:",
+            "  Give Q: 'If TU at Q=5 is 30 and TU at Q=6 is 30, what is MU₆?'",
+            "  (Answer: 0 — confirm with the graph.)",
+            "",
+            "Bridge:",
+            "  'We measured utility for one good. What if you must choose",
+            "   between two goods with a limited budget?'",
+        ],
+        "key_q": "At what quantity does Total Utility reach its maximum, and why does MU = 0 at that point?",
+    },
+    # ── 2 ─────────────────────────────────────────────────────────────────────
+    {
+        "number":   2,
+        "title":    "Indifference Curves & Equilibrium",
+        "file":     "IndifferenceCurveScene.mp4",
+        "duration": "~20 s",
+        "concept":  "Highest reachable indifference curve = consumer equilibrium",
+        "pre": [
+            "SETUP  Write on the board: Px=₦2, Py=₦1, Income=₦12",
+            "",
+            "Ask:",
+            "  'If you have ₦12 and Good X costs ₦2 while Good Y costs ₦1,",
+            "   how many different combinations of X and Y could you buy?'",
+            "",
+            "Let two students suggest combinations — verify on budget equation.",
+            "",
+            "Then say:",
+            "  'The curve that connects all combinations giving the SAME satisfaction",
+            "   is called an indifference curve. Watch how the budget line touches one.'",
+        ],
+        "cues": [
+            ("0:03", "Budget combination table — count the rows with students."),
+            ("0:10", "Three IC curves drawn — note they never cross each other."),
+            ("0:14", "Budget line appears — ask: 'Which IC does it touch?'"),
+            ("0:17", "Equilibrium point E(3,6) highlighted.",
+                     "Say: 'At this point MRS = Px/Py = 2 — the consumer is in balance.'"),
+            ("0:20", "Breadcrumb — read aloud."),
+        ],
+        "post": [
+            "KEY TAKEAWAY  Consumer equilibrium: tangency of budget line and IC.",
+            "",
+            "Discussion:",
+            "  'Why can the consumer NOT reach U₃?' (Answer: budget constraint.)",
+            "  'What happens to the equilibrium if income doubles?'",
+            "",
+            "Quick test:",
+            "  'If the consumer is at U₁, are they maximising utility? Why not?'",
+            "",
+            "Bridge:",
+            "  'We used ordinal utility (rankings). Now let us use cardinal utility",
+            "   (actual MU numbers) to find the same equilibrium differently.'",
+        ],
+        "key_q": "Why must the slope of the budget line equal MRS at consumer equilibrium?",
+    },
+    # ── 3 ─────────────────────────────────────────────────────────────────────
+    {
+        "number":   3,
+        "title":    "Cardinal Equilibrium (MU/P)",
+        "file":     "CardinalEquilibriumScene.mp4",
+        "duration": "~18 s",
+        "concept":  "Equi-marginal principle: MUx/Px = MUy/Py = λ",
+        "pre": [
+            "RECAP  Ask: 'What did the indifference curve tell us about equilibrium?'",
+            "",
+            "Then say:",
+            "  'Cardinal utility uses actual numbers — we can compute the exact",
+            "   quantity of each good that maximises utility. Watch the λ column.'",
+            "",
+            "Write the formula on the board:",
+            "  MUx / Px = MUy / Py = λ  (lambda = marginal utility of income)",
+            "",
+            "FOCUS POINT  Students should track when the λ values match across",
+            "both goods — that is the equilibrium combination.",
+        ],
+        "cues": [
+            ("0:04", "Formula banner displayed — read it with the class."),
+            ("0:08", "Dual tables build: Good X (left) and Good Y (right)."),
+            ("0:13", "Boxes highlight Qx=3 and Qy=4 simultaneously.",
+                     "Say: 'MUx/Px = MUy/Py = 6 here — the ratios are equal.'"),
+            ("0:16", "Budget check shown: 2×3 + 1×4 = 10 = income.  Say: 'Confirmed!'"),
+            ("0:18", "Breadcrumb — read aloud."),
+        ],
+        "post": [
+            "KEY TAKEAWAY  Spend income so the last ₦ spent on each good gives equal MU.",
+            "",
+            "Discussion:",
+            "  'What does λ represent?' (MU from spending one more naira.)",
+            "  'If MUx/Px > MUy/Py, what should the consumer do?'",
+            "  (Answer: buy more X, less Y, until equality is restored.)",
+            "",
+            "Worked example:",
+            "  'If MUx=20, Px=4, MUy=15, Py=3, is the consumer in equilibrium?'",
+            "  (MUx/Px=5, MUy/Py=5 — Yes!)",
+            "",
+            "Bridge:",
+            "  'What if the price of X changed? How would the budget line shift?'",
+        ],
+        "key_q": "If MUx/Px > MUy/Py, what adjustment must the consumer make to reach equilibrium?",
+    },
+    # ── 4 ─────────────────────────────────────────────────────────────────────
+    {
+        "number":   4,
+        "title":    "Budget Line Shifts",
+        "file":     "BudgetShiftsScene.mp4",
+        "duration": "~20 s",
+        "concept":  "Income → parallel shift; Price → pivot",
+        "pre": [
+            "HOOK  Ask: 'If your income doubles, can you buy twice as much of everything?'",
+            "",
+            "Discuss briefly, then add:",
+            "  'What if the price of just one good falls — does the whole budget change?'",
+            "",
+            "Remind students of the budget equation: Px·x + Py·y = I",
+            "  Intercepts: x-axis = I/Px,  y-axis = I/Py",
+            "",
+            "FOCUS POINT  Watch the x-intercept and y-intercept of each line.",
+            "  — Income shift: BOTH intercepts change proportionally.",
+            "  — Price pivot:  only the x-intercept moves.",
+        ],
+        "cues": [
+            ("0:04", "Base budget table (I=12) shown — count intercept values."),
+            ("0:09", "Base budget line drawn (white)."),
+            ("0:12", "I=18 line (green) — parallel above.  Ask: 'Which intercept changed?'"),
+            ("0:15", "I=8 line (red) — parallel below.  'And this one?'"),
+            ("0:17", "Px=1 pivot line (yellow) — x-intercept doubles to 12.",
+                     "Say: 'Y-intercept stays at 12 — Py and I are unchanged.'"),
+            ("0:20", "Breadcrumb — read aloud."),
+        ],
+        "post": [
+            "KEY TAKEAWAY  Two causes of budget change, two different geometric effects.",
+            "",
+            "Quick quiz (ask orally):",
+            "  'If Px rises, which way does the budget line pivot?'",
+            "  'If income falls by 20%, what happens to both intercepts?'",
+            "",
+            "Concept check:",
+            "  'A tax on Good X is equivalent to a rise in Px — show on the diagram.'",
+            "",
+            "Bridge:",
+            "  'When Px falls, the consumer buys more X for two different reasons.",
+            "   Let us separate those two effects.'",
+        ],
+        "key_q": "A rise in income and a fall in Px both move the budget line — how do they differ geometrically?",
+    },
+    # ── 5 ─────────────────────────────────────────────────────────────────────
+    {
+        "number":   5,
+        "title":    "Income & Substitution Effects",
+        "file":     "IncomeSubstitutionScene.mp4",
+        "duration": "~25 s",
+        "concept":  "Hicks decomposition: TE = SE + IE",
+        "pre": [
+            "SETUP  Write on board: Px falls from ₦2 to ₦1  (Py=₦1, I=₦12)",
+            "",
+            "Ask: 'When petrol becomes cheaper, why do you buy more?'",
+            "  Guide students to two reasons:",
+            "  1. It is now cheaper relative to other things (substitution).",
+            "  2. Your real purchasing power has effectively risen (income).",
+            "",
+            "Introduce Hicks method:",
+            "  'We remove the income effect by imagining the government takes back",
+            "   just enough income to keep you on the ORIGINAL satisfaction level.'",
+            "",
+            "FOCUS POINT  Watch points A, C and B.",
+        ],
+        "cues": [
+            ("0:04", "Summary table: A(3,6), C(4.24,4.24), B(6,6) — read the columns."),
+            ("0:10", "Effects table: SE=+1.24, IE=+1.76, TE=+3.00."),
+            ("0:15", "Graph: two ICs drawn — U=18 and U=36."),
+            ("0:18", "Three budget lines: original (red), compensated (grey), new (white)."),
+            ("0:21", "Points A, C, B plotted.  Arrows show SE then IE along x-axis.",
+                     "Say: 'Both effects point in the same direction — normal good.'"),
+            ("0:25", "Breadcrumb — read aloud."),
+        ],
+        "post": [
+            "KEY TAKEAWAY  Total Effect = Substitution Effect + Income Effect.",
+            "",
+            "Discussion:",
+            "  'For an inferior good, IE is negative. What does that do to TE?'",
+            "  'For a Giffen good, |IE| > |SE|, so TE is negative — demand curve slopes UP.'",
+            "",
+            "Diagram exercise:",
+            "  'Sketch the Hicks decomposition for a price RISE.'",
+            "",
+            "Bridge:",
+            "  'We know consumers gain when prices fall. But by how much?",
+            "   That gain is called Consumer Surplus.'",
+        ],
+        "key_q": "A good has SE=+2 and IE=−3 when its price falls. Is it normal, inferior, or Giffen?",
+    },
+    # ── 6 ─────────────────────────────────────────────────────────────────────
+    {
+        "number":   6,
+        "title":    "Consumer Surplus",
+        "file":     "ConsumerSurplusScene.mp4",
+        "duration": "~22 s",
+        "concept":  "CS = area between demand curve and price line",
+        "pre": [
+            "HOOK  Ask: 'Have you ever paid ₦500 for something you would have",
+            "  happily paid ₦800 for?  That ₦300 difference is your consumer surplus.'",
+            "",
+            "Write on board:  Demand → P = 12 − Q,  Market Price P* = ₦4",
+            "",
+            "Ask: 'How much would someone pay for the 1st unit?  The 2nd?  The 8th?'",
+            "  (Answers: ₦11, ₦10, … ₦4 — from the demand equation.)",
+            "",
+            "FOCUS POINT  Watch the blue shaded triangle — that is the total CS.",
+        ],
+        "cues": [
+            ("0:04", "Data table builds: willingness-to-pay vs market price per unit."),
+            ("0:10", "Total CS = ½ × 8 × 8 = ₦32 announced."),
+            ("0:13", "Axes and demand curve D: P=12−Q drawn."),
+            ("0:16", "Horizontal price line P*=4 and vertical Q*=8 added."),
+            ("0:18", "Blue CS triangle shaded.",
+                     "Say: 'Every unit from Q=1 to Q=8 earns surplus. The triangle captures it all.'"),
+            ("0:21", "Breadcrumb — read aloud."),
+        ],
+        "post": [
+            "KEY TAKEAWAY  Consumer Surplus = what you would have paid minus what you actually paid.",
+            "",
+            "Calculation exercise:",
+            "  'If P* rises to ₦8, recalculate CS.'",
+            "  (New Q* = 4, CS = ½ × 4 × 4 = ₦8 — CS fell sharply.)",
+            "",
+            "Discussion:",
+            "  'Why does a price ceiling (P < P*) increase CS for buyers who can get the good?'",
+            "  'What is the connection between CS and the demand curve?'",
+            "",
+            "Bridge:",
+            "  'The demand curve itself comes from the MU curve.",
+            "   In our final scene, we connect these two ideas formally.'",
+        ],
+        "key_q": "If market price rises from ₦4 to ₦8 on demand P=12−Q, by how much does consumer surplus fall?",
+    },
+    # ── 7 ─────────────────────────────────────────────────────────────────────
+    {
+        "number":   7,
+        "title":    "Diminishing MU → Demand Curve",
+        "file":     "DiminishingMUDemandScene.mp4",
+        "duration": "~22 s",
+        "concept":  "The demand curve is the MU curve (willingness to pay)",
+        "pre": [
+            "RECAP HOOK  Ask: 'We said MU falls as you consume more.",
+            "  If MU = the maximum price you are willing to pay, what does that imply?'",
+            "",
+            "Guide to: 'You pay less for extra units → buy more only at lower prices",
+            "           → that is the Law of Demand!'",
+            "",
+            "Tell students:",
+            "  'This scene is the grand finale — it ties Scenes 1 through 6 together.",
+            "   Watch how the MU table becomes the demand curve point by point.'",
+        ],
+        "cues": [
+            ("0:04", "MU-as-WTP table builds: each MU value is a willingness-to-pay price."),
+            ("0:12", "Note: MU falls from ₦10 at Q=1 to ₦0 at Q=6 — downward sequence."),
+            ("0:15", "Axes drawn — demand curve plotted through each (Q, MU) point.",
+                     "Say: 'The demand curve IS the MU curve.'"),
+            ("0:18", "Dot labels (1,10), (2,8) … (6,0) placed on each point."),
+            ("0:20", "Final note: 'Law of Demand follows from Diminishing MU.'"),
+            ("0:22", "End breadcrumb — recap the full journey."),
+        ],
+        "post": [
+            "GRAND RECAP  Walk students through the full series linkage:",
+            "  Scene 1: TU/MU/AU → Diminishing MU",
+            "  Scene 2: IC map → consumer equilibrium (ordinal)",
+            "  Scene 3: MU/P ratios → consumer equilibrium (cardinal)",
+            "  Scene 4: Budget shifts → income & price effects on consumption",
+            "  Scene 5: Hicks decomposition → SE + IE = TE",
+            "  Scene 6: CS = area under demand above price line",
+            "  Scene 7: MU curve = Demand curve — the unifying idea",
+            "",
+            "Final question (written assessment):",
+            "  'Explain why the demand curve slopes downward using the concept",
+            "   of diminishing marginal utility.'",
+        ],
+        "key_q": "How does the Law of Diminishing Marginal Utility directly explain the downward slope of the demand curve?",
+    },
+]
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Queue / Stack model
@@ -314,11 +634,13 @@ class LessonQueue:
       restart()  → rebuild queue from scratch
     """
 
-    def __init__(self, start_at: int = 1):
-        self._all    = SCENES
-        self.done    = []                         # completed scenes (stack)
-        self.queue   = deque(SCENES)              # upcoming scenes
-        self.current = None
+    def __init__(self, start_at: int = 1, scenes=None, video_dir=None):
+        self._scenes  = scenes if scenes is not None else SCENES
+        self.video_dir = video_dir if video_dir is not None else VIDEO_DIR
+        self._all     = self._scenes
+        self.done     = []                         # completed scenes (stack)
+        self.queue    = deque(self._scenes)        # upcoming scenes
+        self.current  = None
 
         # Fast-forward to the requested starting scene
         self._advance_internal()
@@ -346,7 +668,7 @@ class LessonQueue:
 
     def restart(self):
         self.done    = []
-        self.queue   = deque(SCENES)
+        self.queue   = deque(self._scenes)
         self.current = None
         self._advance_internal()
 
@@ -472,7 +794,7 @@ def render(lq: LessonQueue, section: str):
     CONSOLE.print()
 
     # ── queue list + video path ───────────────────────────────────────────────
-    video_path = VIDEO_DIR / lq.current["file"]
+    video_path = lq.video_dir / lq.current["file"]
     exists_txt = (
         f"[green]✓ {video_path}[/green]"
         if video_path.exists()
@@ -499,8 +821,8 @@ def render(lq: LessonQueue, section: str):
 # Video player
 # ─────────────────────────────────────────────────────────────────────────────
 
-def try_play(scene: dict):
-    path = VIDEO_DIR / scene["file"]
+def try_play(scene: dict, video_dir=None):
+    path = (video_dir or VIDEO_DIR) / scene["file"]
     if not path.exists():
         CONSOLE.print(f"\n[red]Video not found:[/red] {path}")
         CONSOLE.input("[dim]Press Enter to continue…[/dim]")
@@ -525,21 +847,23 @@ def try_play(scene: dict):
 # Export
 # ─────────────────────────────────────────────────────────────────────────────
 
-def export_script():
-    out = ROOT / "lesson_script.txt"
+def export_script(scenes=None, video_dir=None, filename="lesson_script.txt"):
+    scenes    = scenes    if scenes    is not None else SCENES
+    video_dir = video_dir if video_dir is not None else VIDEO_DIR
+    out = ROOT / filename
     lines = [
-        "STANDARD DEVIATION — FULL TEACHING SCRIPT",
+        "FULL TEACHING SCRIPT",
         "=" * 65,
-        "Five-scene video lesson.  Each section is a separate teacher script.",
+        f"Video directory: {video_dir}",
         "",
     ]
-    for s in SCENES:
+    for s in scenes:
         sep = "=" * 65
         lines += [
             sep,
             f"SCENE {s['number']}: {s['title'].upper()}",
             f"Duration: {s['duration']}   |   Concept: {s['concept']}",
-            f"Video:    {VIDEO_DIR / s['file']}",
+            f"Video:    {video_dir / s['file']}",
             sep,
             "",
             "── PRE-VIDEO (before pressing play) ──────────────────────",
@@ -574,7 +898,7 @@ def run(lq: LessonQueue, auto_play: bool = False):
     section = "pre"
 
     if auto_play and lq.current:
-        try_play(lq.current)
+        try_play(lq.current, lq.video_dir)
 
     while lq.current:
         render(lq, section)
@@ -607,7 +931,7 @@ def run(lq: LessonQueue, auto_play: bool = False):
             section = "pre"
 
         elif raw == "v":
-            try_play(lq.current)
+            try_play(lq.current, lq.video_dir)
             CONSOLE.input("\n[dim]Press Enter to continue…[/dim]")
 
         elif raw == "1":
@@ -635,7 +959,7 @@ def run(lq: LessonQueue, auto_play: bool = False):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Teaching queue & script stack for the std-dev video series.",
+        description="Teaching queue & script stack for Manim lesson series.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=textwrap.dedent("""\
             Controls inside the runner:
@@ -644,6 +968,11 @@ def main():
               v          play video        3  post-video discussion
               r          restart queue     q  quit
         """),
+    )
+    parser.add_argument(
+        "--module", choices=["std-dev", "consumer-behaviour"],
+        default="std-dev",
+        help="Which lesson module to run (default: std-dev)",
     )
     parser.add_argument(
         "--from", dest="start", type=int, default=1, metavar="N",
@@ -655,15 +984,24 @@ def main():
     )
     parser.add_argument(
         "--export", action="store_true",
-        help="Save full teaching script to lesson_script.txt and exit",
+        help="Save full teaching script to a .txt file and exit",
     )
     args = parser.parse_args()
 
+    if args.module == "consumer-behaviour":
+        scenes    = CB_SCENES
+        video_dir = CB_VIDEO_DIR
+        fname     = "cb_lesson_script.txt"
+    else:
+        scenes    = SCENES
+        video_dir = VIDEO_DIR
+        fname     = "lesson_script.txt"
+
     if args.export:
-        export_script()
+        export_script(scenes=scenes, video_dir=video_dir, filename=fname)
         return
 
-    lq = LessonQueue(start_at=args.start)
+    lq = LessonQueue(start_at=args.start, scenes=scenes, video_dir=video_dir)
     run(lq, auto_play=args.play)
 
 

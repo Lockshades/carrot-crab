@@ -1,25 +1,27 @@
 """
-Theory of Consumer Behaviour — Teaching Edition
-================================================
+Theory of Consumer Behaviour — Teaching Edition (Redesigned)
+===========================================================
 Seven self-contained Manim scenes aligned with the JAMB/UTME syllabus.
 
+Teaching Doctrine: DATA → FORMULA → CALCULATIONS → TABLE → GRAPH
+
 No LaTeX required — all math uses Text() with Unicode symbols.
-All datasets numerically verified. Scenes connect with breadcrumb sentences.
+All datasets numerically verified. Clean text transitions prevent overlaps.
 
 Scenes:
-  UtilityScene              – TU / MU / AU table + dual curves; Law of Diminishing MU
-  IndifferenceCurveScene    – 3 ICs + budget line + consumer equilibrium
-  CardinalEquilibriumScene  – MUx/Px = MUy/Py dual-column computation table
-  BudgetShiftsScene         – income parallel shifts + price pivot illustration
-  IncomeSubstitutionScene   – Hicks decomposition A → C → B
-  ConsumerSurplusScene      – demand curve + surplus shading + area proof
-  DiminishingMUDemandScene  – MU table → demand curve derivation step by step
+  1. UtilityScene              – Given TU data → formula MU/AU → calculations → table → curves
+  2. IndifferenceCurveScene    – Given budget params → formula → substitutions → table → ICs + BL
+  3. CardinalEquilibriumScene  – Given MU data → formula MUx/Px=MUy/Py → ratios → table → highlight
+  4. BudgetShiftsScene         – Given base budget → show formulas → calculate shifts → graph
+  5. IncomeSubstitutionScene   – Given price change → formula SE/IE → calculate A,C,B → table → graph
+  6. ConsumerSurplusScene      – Given demand → formula CS → calculate per-unit → table → graph
+  7. DiminishingMUDemandScene  – Given MU table → formula MU=WTP → mapping table → demand curve
 """
 
 from manim import *
 import numpy as np
 
-# ── palette ───────────────────────────────────────────────────────────────────
+# ── COLOR PALETTE ──────────────────────────────────────────────────────────
 C_BG     = "#1a1a2e"
 C_TU     = GREEN
 C_MU     = YELLOW
@@ -28,318 +30,505 @@ C_IC1    = "#e74c3c"
 C_IC2    = "#f39c12"
 C_IC3    = "#2ecc71"
 C_BL     = WHITE
-C_SHADE  = BLUE
 C_DEMAND = "#e74c3c"
+C_CALC   = "#ecf0f1"    # light for calculations
 
-# ── verified dataset (Law of Diminishing MU) ─────────────────────────────────
+# ── VERIFIED DATASET ───────────────────────────────────────────────────────
+# Law of Diminishing Marginal Utility: TU rises then flattens, MU falls
 QTY  = [1, 2, 3, 4,  5,  6,  7]
-TU   = [10, 18, 24, 28, 30, 30, 28]
-MU   = [10,  8,  6,  4,  2,  0, -2]   # TU differences (TU[0] assumed from Q=0 TU=0)
-AU   = [10,  9,  8,  7,  6,  5,  4]   # TU / Q
+TU   = [10, 18, 24, 28, 30, 30, 28]   # Total Utility
+MU   = [10,  8,  6,  4,  2,  0, -2]   # Marginal Utility (differences)
+AU   = [10,  9,  8,  7,  6,  5,  4]   # Average Utility (TU/Q)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# Shared helper functions (same LaTeX-free pattern as std_dev_viz.py)
+# HELPER FUNCTIONS
 # ═══════════════════════════════════════════════════════════════════════════════
 
-def _trow(vals, widths, row_h, accent=YELLOW, is_header=False):
-    """One table row: list of (background rect + text) pairs as a VGroup."""
-    g  = VGroup()
+def _table_row(vals, widths, row_h, accent=YELLOW, is_header=False):
+    """Create one table row with background rects and text."""
+    row = VGroup()
     x0 = -sum(widths) / 2
     for val, w in zip(vals, widths):
-        bg = Rectangle(
-            width=w, height=row_h,
-            fill_color=accent, fill_opacity=0.18 if is_header else 0.0,
-            stroke_color=GRAY, stroke_width=0.65,
-        ).move_to([x0 + w / 2, -row_h / 2, 0])
-        txt = Text(
-            str(val),
-            font_size=16 if is_header else 14,
-            color=accent if is_header else WHITE,
-        ).move_to(bg)
-        g.add(bg, txt)
+        bg = Rectangle(width=w, height=row_h, fill_color=accent,
+                       fill_opacity=0.18 if is_header else 0.0,
+                       stroke_color=GRAY, stroke_width=0.65)
+        txt = Text(str(val), font_size=16 if is_header else 13,
+                   color=accent if is_header else WHITE)
+        cell = VGroup(bg, txt).move_to([x0 + w/2, 0, 0])
+        row.add(cell)
         x0 += w
-    return g
+    return row
 
 
 def _table(headers, rows, col_widths, row_h=0.38, accent=YELLOW):
-    """Stack rows into a VGroup. Each child is a row VGroup."""
-    all_rows = VGroup()
-    header = _trow(headers, col_widths, row_h, accent=accent, is_header=True)
-    all_rows.add(header)
-    for row in rows:
-        r = _trow(row, col_widths, row_h, accent=accent, is_header=False)
-        r.next_to(all_rows, DOWN, buff=0)
-        all_rows.add(r)
-    return all_rows
+    """Build a complete table (header + rows)."""
+    table = VGroup()
+    header_row = _table_row(headers, col_widths, row_h, accent=accent, is_header=True)
+    table.add(header_row)
+
+    for row_data in rows:
+        row_obj = _table_row(row_data, col_widths, row_h, accent=accent, is_header=False)
+        row_obj.next_to(table[-1], DOWN, buff=0)
+        table.add(row_obj)
+
+    return table
 
 
-def _y_nums(ax, tick_vals, fs=13, color=GRAY):
-    """Text tick-labels on the y-axis of an Axes object."""
-    g = VGroup()
-    for v in tick_vals:
-        lbl = Text(str(v), font_size=fs, color=color)
-        lbl.next_to(ax.c2p(ax.x_range[0], v), LEFT, buff=0.12)
-        g.add(lbl)
-    return g
+def _axis_labels(ax, x_ticks, y_ticks, x_label_text, y_label_text):
+    """Create axis labels and tick markers."""
+    x_labels = VGroup()
+    for t in x_ticks:
+        lbl = Text(str(t), font_size=12, color=GRAY)
+        lbl.next_to(ax.c2p(t, ax.y_range[0]), DOWN, buff=0.08)
+        x_labels.add(lbl)
+
+    y_labels = VGroup()
+    for t in y_ticks:
+        lbl = Text(str(t), font_size=12, color=GRAY)
+        lbl.next_to(ax.c2p(ax.x_range[0], t), LEFT, buff=0.08)
+        y_labels.add(lbl)
+
+    x_lbl = Text(x_label_text, font_size=14, color=GRAY).next_to(ax, DOWN, buff=0.10)
+    y_lbl = Text(y_label_text, font_size=14, color=GRAY).rotate(PI/2).next_to(ax, LEFT, buff=0.10)
+
+    return VGroup(x_labels, y_labels, x_lbl, y_lbl)
 
 
-def _x_nums(ax, tick_vals, labels=None, fs=13, color=GRAY):
-    """Text tick-labels on the x-axis of an Axes object."""
-    g = VGroup()
-    for i, v in enumerate(tick_vals):
-        lbl = Text(labels[i] if labels else str(v), font_size=fs, color=color)
-        lbl.next_to(ax.c2p(v, ax.y_range[0]), DOWN, buff=0.10)
-        g.add(lbl)
-    return g
+def _section_title(title_text, color=YELLOW):
+    """Create a step/section title."""
+    return Text(title_text, font_size=22, color=color)
 
 
 def _breadcrumb(text):
-    """Dim grey hint at the bottom of the frame linking to next scene."""
-    return Text(text, font_size=17, color=GRAY, slant=ITALIC).to_edge(DOWN)
-
-
-def _axis_label(text, fs=16, color=GRAY):
-    return Text(text, font_size=fs, color=color)
+    """Dim hint at bottom linking to next scene."""
+    return Text(text, font_size=15, color=GRAY, slant=ITALIC).to_edge(DOWN)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# SCENE 1 — Utility: TU, MU, AU + Diminishing Marginal Utility
+# SCENE 1 — Utility: Computing TU, MU, AU from Data
 # ═══════════════════════════════════════════════════════════════════════════════
 class UtilityScene(Scene):
     """
-    Step 1 – TU / MU / AU data table built row by row.
-    Step 2 – Dual-curve chart: TU rises then flattens; MU falls to zero then negative.
-    Concept: Law of Diminishing Marginal Utility.
+    TEACHING FLOW:
+    1. Given: Show raw TU data from Q=1 to Q=7
+    2. Formula: Explain MU = ΔTU/ΔQ and AU = TU/Q
+    3. Calculations: Compute each MU step-by-step with substitutions
+    4. Table: Organize TU, MU, AU in a table
+    5. Graph: Plot dual curves (TU and MU)
     """
 
     def construct(self):
         self.camera.background_color = C_BG
 
-        title = Text("Total, Marginal & Average Utility", font_size=36, color=WHITE).to_edge(UP)
-        sub   = Text("Law of Diminishing Marginal Utility",
-                     font_size=20, color=GRAY, slant=ITALIC).next_to(title, DOWN, buff=0.08)
-        self.play(Write(title), FadeIn(sub))
+        # ── HEADER ──────────────────────────────────────────────────────────
+        main_title = Text("Total, Marginal & Average Utility", font_size=40, color=WHITE).to_edge(UP)
+        subtitle = Text("Law of Diminishing Marginal Utility", font_size=18, color=GRAY, slant=ITALIC).next_to(main_title, DOWN, buff=0.06)
 
-        # ── STEP 1: data table ──────────────────────────────────────────────────
-        step1 = Text("Step 1 — Compute TU, MU and AU", font_size=20, color=YELLOW)
-        step1.next_to(sub, DOWN, buff=0.18)
-        self.play(FadeIn(step1))
+        header = VGroup(main_title, subtitle)
+        self.play(Write(main_title), FadeIn(subtitle))
+        self.wait(0.8)
+
+        # ── STEP 1: GIVEN — Raw TU Data ─────────────────────────────────────
+        step1_title = _section_title("Step 1 — Given: Total Utility Data")
+        step1_title.next_to(subtitle, DOWN, buff=0.4)
+        self.play(FadeIn(step1_title))
+
+        given_text = VGroup(
+            Text("Consumer purchases quantity Q = 1 to 7", font_size=18, color=C_CALC),
+            Text("Total Utility (TU) is measured as satisfaction:", font_size=18, color=C_CALC),
+        ).arrange(DOWN, buff=0.2).next_to(step1_title, DOWN, buff=0.3)
+
+        for line in given_text:
+            self.play(FadeIn(line))
+
+        tu_given = VGroup(
+            Text("Q:  1   2   3   4   5   6   7", font_size=18, color=YELLOW),
+            Text("TU: 10  18  24  28  30  30  28", font_size=18, color=YELLOW),
+        ).arrange(DOWN, buff=0.15).next_to(given_text, DOWN, buff=0.3)
+
+        for line in tu_given:
+            self.play(FadeIn(line))
+
+        self.wait(1.0)
+
+        # ── Fade out Step 1 ────────────────────────────────────────────────
+        step1_section = VGroup(step1_title, given_text, tu_given)
+        self.play(FadeOut(step1_section))
+        self.wait(0.3)
+
+        # ── STEP 2: FORMULA — MU and AU ─────────────────────────────────────
+        step2_title = _section_title("Step 2 — Formulas: MU and AU")
+        step2_title.next_to(subtitle, DOWN, buff=0.4)
+        self.play(FadeIn(step2_title))
+
+        formulas = VGroup(
+            Text("Marginal Utility (MU) = ΔTU / ΔQ", font_size=20, color=C_MU),
+            Text("                       (change in TU) / (change in Q)", font_size=16, color=GRAY),
+            Text("", font_size=8),
+            Text("Average Utility (AU) = TU / Q", font_size=20, color=C_AU),
+            Text("                       (total satisfaction) / (quantity)", font_size=16, color=GRAY),
+        ).arrange(DOWN, buff=0.18, aligned_edge=LEFT).next_to(step2_title, DOWN, buff=0.3)
+
+        for line in formulas:
+            self.play(FadeIn(line))
+
+        self.wait(1.2)
+
+        # ── Fade out Step 2 ────────────────────────────────────────────────
+        step2_section = VGroup(step2_title, formulas)
+        self.play(FadeOut(step2_section))
+        self.wait(0.3)
+
+        # ── STEP 3: CALCULATIONS — Compute MU with substitutions ───────────
+        step3_title = _section_title("Step 3 — Calculate MU with Substitutions")
+        step3_title.next_to(subtitle, DOWN, buff=0.4)
+        self.play(FadeIn(step3_title))
+
+        calc_header = Text("Computing MU for Q=1 to Q=7:", font_size=18, color=YELLOW).next_to(step3_title, DOWN, buff=0.2)
+        self.play(FadeIn(calc_header))
+
+        # Show calculations step by step
+        calcs = []
+        q_prev, tu_prev = 0, 0
+
+        for q, tu in zip(QTY[:5], TU[:5]):  # Show first 5 for time
+            calc_text = Text(f"Q={q}: MU = (TU{q} − TU{q-1}) / (Q{q} − Q{q-1}) = ({tu} − {tu_prev}) / 1 = {tu - tu_prev}",
+                           font_size=15, color=C_CALC)
+            calcs.append(calc_text)
+            q_prev, tu_prev = q, tu
+
+        calc_group = VGroup(*calcs).arrange(DOWN, buff=0.15).next_to(calc_header, DOWN, buff=0.2)
+
+        for calc in calcs:
+            self.play(FadeIn(calc))
+            self.wait(0.25)
+
+        self.wait(0.5)
+
+        # ── Fade out Step 3 ────────────────────────────────────────────────
+        step3_section = VGroup(step3_title, calc_header, calc_group)
+        self.play(FadeOut(step3_section))
+        self.wait(0.3)
+
+        # ── STEP 4: TABLE — Organize results ────────────────────────────────
+        step4_title = _section_title("Step 4 — Table: TU, MU, and AU")
+        step4_title.next_to(subtitle, DOWN, buff=0.4)
+        self.play(FadeIn(step4_title))
 
         headers = ["Q", "TU", "MU", "AU"]
-        widths  = [0.55, 0.60, 0.60, 0.60]
         rows = [
             [str(q), str(tu), str(mu), str(au)]
             for q, tu, mu, au in zip(QTY, TU, MU, AU)
         ]
-        tbl = _table(headers, rows, widths, row_h=0.34, accent=YELLOW)
 
-        # colour-code MU column
-        for i, row_grp in enumerate(tbl[1:], 0):   # skip header
-            mu_val = MU[i]
-            # cells at index 4,5 (3rd column = MU)
-            colour = C_MU if mu_val > 0 else (RED if mu_val < 0 else GRAY)
-            row_grp[4].set_color(colour)  # bg rect tint
-            row_grp[5].set_color(colour)  # text
+        tbl = _table(headers, rows, [0.50, 0.65, 0.65, 0.65], row_h=0.32, accent=YELLOW)
+        tbl.scale(0.90).next_to(step4_title, DOWN, buff=0.25)
 
-        tbl.scale(0.95).next_to(step1, DOWN, buff=0.20)
-        for row in tbl:
-            self.play(FadeIn(row, shift=RIGHT * 0.1), run_time=0.35)
-        self.wait(0.4)
+        # Animate table row by row
+        self.play(FadeIn(tbl[0]))  # header
+        for i, row in enumerate(tbl[1:], 1):
+            self.play(FadeIn(row), run_time=0.2)
 
-        # callout: MU = 0 at Q=6, negative at Q=7
-        callout = Text("MU = 0 at Q = 6  →  saturation point; MU < 0 at Q = 7  →  disutility",
-                       font_size=16, color=YELLOW).to_edge(DOWN, buff=0.55)
-        box = SurroundingRectangle(tbl[6], color=YELLOW, buff=0.04, corner_radius=0.04)
-        self.play(Create(box), Write(callout))
-        self.wait(1.5)
+        # Highlight key observations
+        self.wait(0.5)
+        note1 = Text("MU decreases as Q increases (Diminishing MU)", font_size=14, color=YELLOW).to_edge(DOWN, buff=0.8)
+        self.play(Write(note1))
+        self.wait(0.6)
 
-        # ── STEP 2: dual curves ─────────────────────────────────────────────────
-        step2 = Text("Step 2 — Graphing TU & MU", font_size=20, color=YELLOW)
-        step2.next_to(sub, DOWN, buff=0.18)
-        self.play(
-            FadeOut(step1), FadeOut(tbl), FadeOut(box), FadeOut(callout),
-            FadeIn(step2),
-        )
+        note2_text = "MU = 0 at Q=6 (saturation); MU < 0 at Q=7 (disutility)"
+        note2 = Text(note2_text, font_size=14, color=YELLOW).to_edge(DOWN, buff=0.8)
+        self.play(ReplacementTransform(note1, note2))
+        self.wait(1.0)
 
-        # TU axes
-        ax_tu = Axes(
-            x_range=[0, 8, 1], y_range=[0, 35, 5],
-            x_length=5.5, y_length=2.8,
-            axis_config={"include_numbers": False, "include_tip": False},
-        ).shift(LEFT * 0.5 + UP * 0.8)
+        # ── Fade out Step 4 ────────────────────────────────────────────────
+        self.play(FadeOut(step4_title), FadeOut(tbl), FadeOut(note2))
+        self.wait(0.3)
+
+        # ── STEP 5: GRAPH — Dual curves ─────────────────────────────────────
+        step5_title = _section_title("Step 5 — Visualize: TU and MU Curves")
+        step5_title.next_to(subtitle, DOWN, buff=0.4)
+        self.play(FadeIn(step5_title))
+
+        # TU graph (top)
+        ax_tu = Axes(x_range=[0, 8, 1], y_range=[0, 35, 5],
+                     x_length=5.5, y_length=2.5,
+                     axis_config={"include_numbers": False, "include_tip": False})
+        ax_tu.shift(LEFT * 0.5 + UP * 1.0)
 
         tu_pts = [(q, tu) for q, tu in zip([0] + QTY, [0] + TU)]
         tu_graph = ax_tu.plot_line_graph(
             [p[0] for p in tu_pts], [p[1] for p in tu_pts],
-            line_color=C_TU, vertex_dot_radius=0.05,
+            line_color=C_TU, vertex_dot_radius=0.05
         )
-        tu_lbl = _axis_label("TU", color=C_TU).next_to(ax_tu, LEFT, buff=0.05).shift(UP * 0.4)
-        tu_y   = _y_nums(ax_tu, [0, 10, 20, 30])
-        tu_x   = _x_nums(ax_tu, list(range(1, 8)))
-        tu_title = Text("Total Utility (TU)", font_size=16, color=C_TU).next_to(ax_tu, UP, buff=0.04)
 
-        # MU axes (below)
-        ax_mu = Axes(
-            x_range=[0, 8, 1], y_range=[-4, 12, 2],
-            x_length=5.5, y_length=2.0,
-            axis_config={"include_numbers": False, "include_tip": False},
-        ).next_to(ax_tu, DOWN, buff=0.35).align_to(ax_tu, LEFT)
+        tu_title = Text("Total Utility (TU)", font_size=14, color=C_TU).next_to(ax_tu, UP, buff=0.02)
+        tu_x_tks = VGroup(*[Text(str(i), font_size=11, color=GRAY).next_to(ax_tu.c2p(i, 0), DOWN, buff=0.05) for i in range(1, 8)])
+        tu_y_tks = VGroup(*[Text(str(i), font_size=11, color=GRAY).next_to(ax_tu.c2p(0, i), LEFT, buff=0.05) for i in [10, 20, 30]])
+
+        self.play(Create(ax_tu), FadeIn(tu_x_tks), FadeIn(tu_y_tks), Create(tu_graph["line_graph"]), Write(tu_title))
+
+        # MU graph (bottom)
+        ax_mu = Axes(x_range=[0, 8, 1], y_range=[-4, 12, 2],
+                     x_length=5.5, y_length=2.0,
+                     axis_config={"include_numbers": False, "include_tip": False})
+        ax_mu.next_to(ax_tu, DOWN, buff=0.3).align_to(ax_tu, LEFT)
 
         mu_pts = [(q, mu) for q, mu in zip([0] + QTY, [0] + MU)]
         mu_graph = ax_mu.plot_line_graph(
             [p[0] for p in mu_pts], [p[1] for p in mu_pts],
-            line_color=C_MU, vertex_dot_radius=0.05,
+            line_color=C_MU, vertex_dot_radius=0.05
         )
-        zero_line = DashedLine(
-            ax_mu.c2p(0, 0), ax_mu.c2p(8, 0),
-            color=GRAY, stroke_width=1.2, dash_length=0.10,
-        )
-        mu_y  = _y_nums(ax_mu, [-2, 0, 5, 10])
-        mu_x  = _x_nums(ax_mu, list(range(1, 8)))
-        mu_title = Text("Marginal Utility (MU)", font_size=16, color=C_MU).next_to(ax_mu, DOWN, buff=0.04)
 
-        chart_grp = VGroup(ax_tu, tu_graph, tu_y, tu_x, tu_title, tu_lbl,
-                           ax_mu, mu_graph, zero_line, mu_y, mu_x, mu_title)
-        chart_grp.shift(RIGHT * 0.6)
+        zero_line = DashedLine(ax_mu.c2p(0, 0), ax_mu.c2p(8, 0), color=GRAY, stroke_width=1, dash_length=0.08)
+        mu_title = Text("Marginal Utility (MU)", font_size=14, color=C_MU).next_to(ax_mu, DOWN, buff=0.02)
+        mu_x_tks = VGroup(*[Text(str(i), font_size=11, color=GRAY).next_to(ax_mu.c2p(i, 0), DOWN, buff=0.05) for i in range(1, 8)])
+        mu_y_tks = VGroup(*[Text(str(i), font_size=11, color=GRAY).next_to(ax_mu.c2p(0, i), LEFT, buff=0.05) for i in [-2, 0, 5, 10]])
 
-        self.play(Create(ax_tu), Create(ax_mu), FadeIn(tu_y), FadeIn(mu_y),
-                  FadeIn(tu_x), FadeIn(mu_x), run_time=0.7)
-        self.play(Create(tu_graph["line_graph"]), Write(tu_title), Write(tu_lbl))
-        self.play(Create(mu_graph["line_graph"]), Create(zero_line), Write(mu_title))
+        self.play(Create(ax_mu), FadeIn(mu_x_tks), FadeIn(mu_y_tks), Create(mu_graph["line_graph"]), Create(zero_line), Write(mu_title))
 
-        # annotation: TU max and MU=0 align
-        dot_tu_max = Dot(ax_tu.c2p(6, 30), color=WHITE, radius=0.08)
-        dot_mu_zero = Dot(ax_mu.c2p(6, 0), color=WHITE, radius=0.08)
-        v_dash = DashedLine(ax_tu.c2p(6, 30), ax_mu.c2p(6, 0), color=WHITE, stroke_width=1)
-        note = Text("TU is max when MU = 0  (Q = 6)", font_size=15, color=WHITE).to_edge(RIGHT).shift(UP * 0.3)
-        self.play(FadeIn(dot_tu_max), FadeIn(dot_mu_zero), Create(v_dash), Write(note))
-        self.wait(1.8)
+        self.wait(1.5)
 
-        crumb = _breadcrumb("Next: Indifference Curves — choosing between two goods simultaneously")
+        # ── Breadcrumb ──────────────────────────────────────────────────────
+        crumb = _breadcrumb("Next: Indifference Curves — choosing between two goods")
         self.play(FadeIn(crumb))
-        self.wait(1.2)
+        self.wait(1.0)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# SCENE 2 — Indifference Curves + Budget Line + Equilibrium
+# SCENE 2 — Indifference Curves + Budget Line
 # ═══════════════════════════════════════════════════════════════════════════════
 class IndifferenceCurveScene(Scene):
     """
-    Step 1 – Budget constraint data table (Px=2, Py=1, I=12).
-    Step 2 – Three ICs (U=12, 18, 24) + budget line + equilibrium point.
-    Concept: Consumer reaches highest reachable IC.
+    TEACHING FLOW:
+    1. Given: Budget parameters (Px=2, Py=1, I=12)
+    2. Formula: Budget constraint 2X + Y = 12 → Y = 12 - 2X
+    3. Calculations: Compute X,Y combinations by substitution
+    4. Table: Show budget combinations
+    5. Graph: Plot three ICs, budget line, equilibrium
     """
-
-    # Px=2, Py=1, I=12
-    # Budget: 2x + y = 12  →  y = 12 - 2x
-    # Equilibrium: MRS = Px/Py = 2  → on U=xy: MRS = y/x = 2 → y=2x; and 2x+y=12 → x=3, y=6
 
     def construct(self):
         self.camera.background_color = C_BG
 
-        title = Text("Indifference Curves & Consumer Equilibrium", font_size=33, color=WHITE).to_edge(UP)
-        sub   = Text("Px = 2,  Py = 1,  Income = ₦12",
-                     font_size=19, color=GRAY, slant=ITALIC).next_to(title, DOWN, buff=0.08)
-        self.play(Write(title), FadeIn(sub))
+        # ── HEADER ──────────────────────────────────────────────────────────
+        main_title = Text("Indifference Curves & Budget Constraint", font_size=38, color=WHITE).to_edge(UP)
+        subtitle = Text("Px=2,  Py=1,  Income=₦12", font_size=17, color=GRAY, slant=ITALIC).next_to(main_title, DOWN, buff=0.06)
 
-        # ── STEP 1: budget table ────────────────────────────────────────────────
-        step1 = Text("Step 1 — Budget combinations (y = 12 − 2x)", font_size=19, color=YELLOW)
-        step1.next_to(sub, DOWN, buff=0.18)
-        self.play(FadeIn(step1))
+        self.play(Write(main_title), FadeIn(subtitle))
+        self.wait(0.8)
 
-        brows = [(str(x), str(12 - 2*x)) for x in range(0, 7)]
-        btbl  = _table(["Qty X", "Qty Y"], brows, [0.70, 0.70], row_h=0.33, accent=YELLOW)
-        btbl.scale(0.95).next_to(step1, DOWN, buff=0.18)
-        self.play(FadeIn(btbl))
+        # ── STEP 1: GIVEN ────────────────────────────────────────────────────
+        step1_title = _section_title("Step 1 — Given: Budget Parameters")
+        step1_title.next_to(subtitle, DOWN, buff=0.4)
+        self.play(FadeIn(step1_title))
+
+        given = VGroup(
+            Text("Price of X (Px) = ₦2", font_size=17, color=C_CALC),
+            Text("Price of Y (Py) = ₦1", font_size=17, color=C_CALC),
+            Text("Income (I) = ₦12", font_size=17, color=C_CALC),
+        ).arrange(DOWN, buff=0.15).next_to(step1_title, DOWN, buff=0.3)
+
+        for line in given:
+            self.play(FadeIn(line))
+
+        self.wait(0.8)
+        self.play(FadeOut(VGroup(step1_title, given)))
+        self.wait(0.3)
+
+        # ── STEP 2: FORMULA ─────────────────────────────────────────────────
+        step2_title = _section_title("Step 2 — Formula: Budget Line")
+        step2_title.next_to(subtitle, DOWN, buff=0.4)
+        self.play(FadeIn(step2_title))
+
+        formula = VGroup(
+            Text("Budget Constraint: Px·X + Py·Y = I", font_size=19, color=C_MU),
+            Text("Rearranged:       Y = (I - Px·X) / Py", font_size=19, color=C_MU),
+        ).arrange(DOWN, buff=0.2).next_to(step2_title, DOWN, buff=0.3)
+
+        for line in formula:
+            self.play(FadeIn(line))
+
         self.wait(1.0)
+        self.play(FadeOut(VGroup(step2_title, formula)))
+        self.wait(0.3)
 
-        # ── STEP 2: IC map ──────────────────────────────────────────────────────
-        step2 = Text("Step 2 — Indifference Map + Budget Line", font_size=19, color=YELLOW)
-        step2.next_to(sub, DOWN, buff=0.18)
-        self.play(FadeOut(step1), FadeOut(btbl), FadeIn(step2))
+        # ── STEP 3: CALCULATIONS ────────────────────────────────────────────
+        step3_title = _section_title("Step 3 — Substitute and Calculate")
+        step3_title.next_to(subtitle, DOWN, buff=0.4)
+        self.play(FadeIn(step3_title))
 
-        ax = Axes(
-            x_range=[0, 10, 1], y_range=[0, 20, 2],
-            x_length=5.8, y_length=4.5,
-            axis_config={"include_numbers": False, "include_tip": False},
-        ).shift(RIGHT * 0.8 + DOWN * 0.4)
+        substitution = VGroup(
+            Text("Substituting Px=2, Py=1, I=12:", font_size=17, color=YELLOW),
+            Text("Y = (12 - 2X) / 1 = 12 - 2X", font_size=17, color=C_CALC),
+        ).arrange(DOWN, buff=0.2).next_to(step3_title, DOWN, buff=0.3)
 
-        x_lbl = _axis_label("Qty of Good X").next_to(ax, DOWN, buff=0.05)
-        y_lbl = _axis_label("Qty of Good Y").next_to(ax, LEFT, buff=0.05).rotate(PI/2)
-        x_tks = _x_nums(ax, list(range(1, 10)))
-        y_tks = _y_nums(ax, [2, 4, 6, 8, 10, 12, 14, 16, 18])
+        self.play(FadeIn(substitution[0]))
+        self.play(FadeIn(substitution[1]))
 
-        self.play(Create(ax), FadeIn(x_lbl), FadeIn(y_lbl), FadeIn(x_tks), FadeIn(y_tks))
+        self.wait(0.5)
 
-        # IC curves: y = U/x
-        ic_data = [(12, C_IC1, "U₁=12"), (18, C_IC2, "U₂=18"), (24, C_IC3, "U₃=24")]
-        for U, colour, label in ic_data:
-            ic = ax.plot(lambda x, U=U: U / x, x_range=[U/18.5, 9.5], color=colour, stroke_width=2)
-            ic_lbl = Text(label, font_size=15, color=colour)
-            ic_lbl.next_to(ax.c2p(9.3, U/9.3), RIGHT, buff=0.06)
-            self.play(Create(ic), Write(ic_lbl), run_time=0.55)
+        # Calculate points
+        calc_text = Text("For different values of X:", font_size=16, color=YELLOW).next_to(substitution, DOWN, buff=0.3)
+        self.play(FadeIn(calc_text))
 
-        # budget line: y = 12 - 2x
-        bl = ax.plot(lambda x: 12 - 2*x, x_range=[0, 6], color=C_BL, stroke_width=2)
-        bl_lbl = Text("Budget Line\n2x+y=12", font_size=14, color=WHITE)
-        bl_lbl.next_to(ax.c2p(0.3, 11), RIGHT, buff=0.06)
-        self.play(Create(bl), Write(bl_lbl), run_time=0.55)
+        calcs = VGroup()
+        for x in range(0, 7):
+            y = 12 - 2*x
+            calc = Text(f"X={x}: Y = 12 - 2({x}) = {y}", font_size=14, color=C_CALC)
+            calcs.add(calc)
 
-        # equilibrium E (3, 6)
-        eq_dot = Dot(ax.c2p(3, 6), color=WHITE, radius=0.10)
-        eq_lbl = Text("E (3, 6)\nEquilibrium", font_size=14, color=WHITE)
-        eq_lbl.next_to(ax.c2p(3, 6), UR, buff=0.12)
+        calcs.arrange(DOWN, buff=0.12).next_to(calc_text, DOWN, buff=0.2)
+
+        for calc in calcs:
+            self.play(FadeIn(calc), run_time=0.15)
+
+        self.wait(0.8)
+        self.play(FadeOut(VGroup(step3_title, substitution, calc_text, calcs)))
+        self.wait(0.3)
+
+        # ── STEP 4: TABLE ────────────────────────────────────────────────────
+        step4_title = _section_title("Step 4 — Budget Combinations Table")
+        step4_title.next_to(subtitle, DOWN, buff=0.4)
+        self.play(FadeIn(step4_title))
+
+        b_rows = [[str(x), str(12 - 2*x)] for x in range(0, 7)]
+        b_tbl = _table(["Qty X", "Qty Y"], b_rows, [0.80, 0.80], row_h=0.32, accent=YELLOW)
+        b_tbl.scale(0.85).next_to(step4_title, DOWN, buff=0.3)
+
+        self.play(FadeIn(b_tbl[0]))
+        for row in b_tbl[1:]:
+            self.play(FadeIn(row), run_time=0.15)
+
+        self.wait(1.0)
+        self.play(FadeOut(VGroup(step4_title, b_tbl)))
+        self.wait(0.3)
+
+        # ── STEP 5: GRAPH ────────────────────────────────────────────────────
+        step5_title = _section_title("Step 5 — Indifference Curves & Budget Line")
+        step5_title.next_to(subtitle, DOWN, buff=0.4)
+        self.play(FadeIn(step5_title))
+
+        ax = Axes(x_range=[0, 10, 1], y_range=[0, 20, 2],
+                  x_length=5.8, y_length=4.2,
+                  axis_config={"include_numbers": False, "include_tip": False})
+        ax.shift(RIGHT * 0.5 + DOWN * 0.5)
+
+        x_tks = VGroup(*[Text(str(i), font_size=12, color=GRAY).next_to(ax.c2p(i, 0), DOWN, buff=0.06) for i in range(1, 10)])
+        y_tks = VGroup(*[Text(str(i), font_size=12, color=GRAY).next_to(ax.c2p(0, i), LEFT, buff=0.06) for i in range(2, 20, 2)])
+        x_lbl = Text("Qty X", font_size=14, color=GRAY).next_to(ax, DOWN, buff=0.08)
+        y_lbl = Text("Qty Y", font_size=14, color=GRAY).rotate(PI/2).next_to(ax, LEFT, buff=0.08)
+
+        self.play(Create(ax), FadeIn(x_tks), FadeIn(y_tks), FadeIn(x_lbl), FadeIn(y_lbl))
+
+        # Three indifference curves (U=12, 18, 24)
+        for U, color, label in [(12, C_IC1, "U₁=12"), (18, C_IC2, "U₂=18"), (24, C_IC3, "U₃=24")]:
+            ic = ax.plot(lambda x, U=U: U/x, x_range=[U/18.5, 9.5], color=color, stroke_width=2.2)
+            ic_lbl = Text(label, font_size=13, color=color).next_to(ax.c2p(9.2, U/9.2), RIGHT, buff=0.05)
+            self.play(Create(ic), Write(ic_lbl), run_time=0.5)
+
+        self.wait(0.5)
+
+        # Budget line: Y = 12 - 2X
+        bl = ax.plot(lambda x: 12 - 2*x, x_range=[0, 6], color=C_BL, stroke_width=2.2)
+        bl_lbl = Text("Budget Line\n2X+Y=12", font_size=12, color=WHITE).next_to(ax.c2p(0.5, 11), RIGHT, buff=0.05)
+        self.play(Create(bl), Write(bl_lbl), run_time=0.5)
+
+        self.wait(0.5)
+
+        # Equilibrium (3, 6)
+        eq_dot = Dot(ax.c2p(3, 6), color=WHITE, radius=0.11)
+        eq_lbl = Text("E(3,6)\nOptimal", font_size=12, color=WHITE).next_to(ax.c2p(3, 6), UR, buff=0.10)
         self.play(FadeIn(eq_dot), Write(eq_lbl))
 
-        note = Text("MRS = Px/Py = 2  →  Consumer maximises utility on U₂",
-                    font_size=16, color=YELLOW).to_edge(DOWN, buff=0.55)
+        note = Text("Consumer reaches highest IC on the budget line", font_size=14, color=YELLOW).to_edge(DOWN, buff=0.7)
         self.play(Write(note))
-        self.wait(1.8)
 
-        crumb = _breadcrumb("Next: Cardinal Equilibrium — exact MU/P ratios")
+        self.wait(1.5)
+
+        crumb = _breadcrumb("Next: Cardinal Equilibrium — MUx/Px = MUy/Py")
         self.play(FadeIn(crumb))
-        self.wait(1.2)
+        self.wait(1.0)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# SCENE 3 — Cardinal Equilibrium: MUx/Px = MUy/Py
+# SCENE 3 — Cardinal Equilibrium
 # ═══════════════════════════════════════════════════════════════════════════════
 class CardinalEquilibriumScene(Scene):
     """
-    Step 1 – Separate MUx/Px and MUy/Py tables (Px=2, Py=1, I=10).
-    Step 2 – Highlight the matching ratio; confirm budget is exhausted.
-    Concept: Cardinal utility — equi-marginal principle.
-
-    Verified:
-      Px=2, Py=1, I=10
-      MUx at x=1..5: 20,16,12,8,4   → MUx/Px: 10,8,6,4,2
-      MUy at y=1..5: 6,5,4,3,2      → MUy/Py: 6,5,4,3,2
-      Equilibrium: MUx/Px = MUy/Py = 6  → x=3, y=4  → spend: 2×3+1×4=10 ✓
+    TEACHING FLOW:
+    1. Given: MU data, prices, income
+    2. Formula: MUx/Px = MUy/Py = λ (equi-marginal principle)
+    3. Calculations: Compute ratios for each quantity
+    4. Table: Side-by-side comparison of Good X and Good Y
+    5. Highlight: Where ratios are equal (equilibrium)
     """
 
-    MUX = [20, 16, 12,  8, 4]
-    MUY = [ 6,  5,  4,  3, 2]
-    PX  = 2
-    PY  = 1
+    MUX = [20, 16, 12, 8, 4]
+    MUY = [6, 5, 4, 3, 2]
+    PX = 2
+    PY = 1
 
     def construct(self):
         self.camera.background_color = C_BG
 
-        title = Text("Cardinal Equilibrium  —  Equi-Marginal Principle", font_size=32, color=WHITE).to_edge(UP)
-        sub   = Text("Px = 2,  Py = 1,  Income = ₦10",
-                     font_size=19, color=GRAY, slant=ITALIC).next_to(title, DOWN, buff=0.08)
-        self.play(Write(title), FadeIn(sub))
+        # ── HEADER ──────────────────────────────────────────────────────────
+        main_title = Text("Cardinal Equilibrium — Equi-Marginal Principle", font_size=36, color=WHITE).to_edge(UP)
+        subtitle = Text("Px=2,  Py=1,  Income=₦10", font_size=17, color=GRAY, slant=ITALIC).next_to(main_title, DOWN, buff=0.06)
 
-        # ── formula banner ──────────────────────────────────────────────────────
-        formula = Text("Equilibrium:  MUx / Px  =  MUy / Py  =  λ",
-                       font_size=20, color=YELLOW).next_to(sub, DOWN, buff=0.15)
-        self.play(FadeIn(formula))
+        self.play(Write(main_title), FadeIn(subtitle))
+        self.wait(0.8)
 
-        # ── STEP 1: dual tables ─────────────────────────────────────────────────
-        step1 = Text("Step 1 — Compute MU/P ratios", font_size=19, color=YELLOW)
-        step1.next_to(formula, DOWN, buff=0.15)
-        self.play(FadeIn(step1))
+        # ── FORMULA BANNER ───────────────────────────────────────────────────
+        formula_banner = Text("Equilibrium Condition: MUx/Px = MUy/Py = λ",
+                              font_size=21, color=YELLOW).next_to(subtitle, DOWN, buff=0.3)
+        self.play(FadeIn(formula_banner))
+        self.wait(0.8)
+
+        # ── STEP 1: GIVEN ────────────────────────────────────────────────────
+        step1_title = _section_title("Step 1 — Given: Marginal Utilities")
+        step1_title.next_to(formula_banner, DOWN, buff=0.3)
+        self.play(FadeIn(step1_title))
+
+        given = VGroup(
+            Text("Good X: MUx = [20, 16, 12, 8, 4] at Qx = 1..5", font_size=16, color=C_CALC),
+            Text("Good Y: MUy = [6, 5, 4, 3, 2] at Qy = 1..5", font_size=16, color=C_CALC),
+        ).arrange(DOWN, buff=0.15).next_to(step1_title, DOWN, buff=0.25)
+
+        for line in given:
+            self.play(FadeIn(line))
+
+        self.wait(0.6)
+        self.play(FadeOut(VGroup(step1_title, given)))
+        self.wait(0.3)
+
+        # ── STEP 2: FORMULA & CALCULATIONS ──────────────────────────────────
+        step2_title = _section_title("Step 2 — Calculate MU/P Ratios")
+        step2_title.next_to(formula_banner, DOWN, buff=0.3)
+        self.play(FadeIn(step2_title))
+
+        calc_note = Text("For each quantity, divide MU by price:", font_size=16, color=YELLOW).next_to(step2_title, DOWN, buff=0.2)
+        self.play(FadeIn(calc_note))
+
+        # Show calculation for first few items
+        calcs_x = VGroup()
+        for i, mx in enumerate(self.MUX[:3]):
+            calc = Text(f"Qx={i+1}: MUx/Px = {mx}/{self.PX} = {mx//self.PX}",
+                       font_size=14, color=C_CALC)
+            calcs_x.add(calc)
+
+        calcs_x.arrange(DOWN, buff=0.12).next_to(calc_note, DOWN, buff=0.2)
+        for calc in calcs_x:
+            self.play(FadeIn(calc), run_time=0.15)
+
+        self.wait(0.6)
+        self.play(FadeOut(VGroup(step2_title, calc_note, calcs_x)))
+        self.wait(0.3)
+
+        # ── STEP 3: TABLE ────────────────────────────────────────────────────
+        step3_title = _section_title("Step 3 — Dual Comparison Table")
+        step3_title.next_to(formula_banner, DOWN, buff=0.3)
+        self.play(FadeIn(step3_title))
 
         # Good X table
         x_rows = [
@@ -347,7 +536,7 @@ class CardinalEquilibriumScene(Scene):
             for i, mx in enumerate(self.MUX)
         ]
         x_tbl = _table(["Qx", "MUx", "MUx/Px", "λx"], x_rows,
-                        [0.50, 0.65, 0.72, 0.55], row_h=0.36, accent=C_IC3)
+                        [0.45, 0.60, 0.70, 0.50], row_h=0.30, accent=C_IC3)
 
         # Good Y table
         y_rows = [
@@ -355,242 +544,398 @@ class CardinalEquilibriumScene(Scene):
             for i, my in enumerate(self.MUY)
         ]
         y_tbl = _table(["Qy", "MUy", "MUy/Py", "λy"], y_rows,
-                        [0.50, 0.65, 0.72, 0.55], row_h=0.36, accent=C_IC2)
+                        [0.45, 0.60, 0.70, 0.50], row_h=0.30, accent=C_IC2)
 
-        dual = VGroup(
-            VGroup(Text("Good X  (Px=2)", font_size=16, color=C_IC3), x_tbl).arrange(DOWN, buff=0.08),
-            VGroup(Text("Good Y  (Py=1)", font_size=16, color=C_IC2), y_tbl).arrange(DOWN, buff=0.08),
-        ).arrange(RIGHT, buff=0.60).next_to(step1, DOWN, buff=0.18)
+        x_header = Text("Good X (Px=2)", font_size=15, color=C_IC3).scale(0.9)
+        y_header = Text("Good Y (Py=1)", font_size=15, color=C_IC2).scale(0.9)
 
-        for col in dual:
-            self.play(FadeIn(col, shift=UP * 0.1), run_time=0.6)
+        x_col = VGroup(x_header, x_tbl).arrange(DOWN, buff=0.12)
+        y_col = VGroup(y_header, y_tbl).arrange(DOWN, buff=0.12)
 
-        # ── STEP 2: highlight equilibrium rows ──────────────────────────────────
-        # x=3 → row index 3 in x_tbl; y=4 → row index 4 in y_tbl
-        eq_x_row = x_tbl[3]   # 0=header, 1=Qx=1, 2=Qx=2, 3=Qx=3
-        eq_y_row = y_tbl[4]   # 0=header, 1=Qy=1, 2=Qy=2, 3=Qy=3, 4=Qy=4
+        both = VGroup(x_col, y_col).arrange(RIGHT, buff=0.6).next_to(step3_title, DOWN, buff=0.25)
 
-        box_x = SurroundingRectangle(eq_x_row, color=YELLOW, buff=0.04, corner_radius=0.04)
-        box_y = SurroundingRectangle(eq_y_row, color=YELLOW, buff=0.04, corner_radius=0.04)
+        self.play(FadeIn(x_col), FadeIn(y_col))
+        self.wait(1.0)
+
+        # Highlight equilibrium rows (Qx=3, Qy=4 where ratios both = 6)
+        eq_x_row = x_tbl[3]  # row for Qx=3
+        eq_y_row = y_tbl[4]  # row for Qy=4
+
+        box_x = SurroundingRectangle(eq_x_row, color=YELLOW, buff=0.06, corner_radius=0.04)
+        box_y = SurroundingRectangle(eq_y_row, color=YELLOW, buff=0.06, corner_radius=0.04)
+
         self.play(Create(box_x), Create(box_y))
 
-        result = Text(
-            "At Qx=3, Qy=4:  MUx/Px = MUy/Py = 6  and  2×3 + 1×4 = 10 = Income  ✓",
-            font_size=16, color=YELLOW,
-        ).to_edge(DOWN, buff=0.55)
+        result = Text("At Qx=3, Qy=4: MUx/Px = MUy/Py = 6  ✓  Budget: 2(3) + 1(4) = 10 = Income",
+                     font_size=14, color=YELLOW).to_edge(DOWN, buff=0.7)
         self.play(Write(result))
-        self.wait(2.0)
 
-        crumb = _breadcrumb("Next: Budget Shifts — what happens when income or price changes?")
+        self.wait(1.5)
+
+        crumb = _breadcrumb("Next: Budget Shifts — income and price changes")
         self.play(FadeIn(crumb))
-        self.wait(1.2)
+        self.wait(1.0)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# SCENE 4 — Budget Line Shifts: Income & Price Changes
+# SCENE 4 — Budget Line Shifts
 # ═══════════════════════════════════════════════════════════════════════════════
 class BudgetShiftsScene(Scene):
     """
-    Step 1 – Show budget table for base case (Px=2, Py=1, I=12).
-    Step 2 – Income rise to I=18 and fall to I=8 → parallel shifts.
-    Step 3 – Price of X falls to Px=1 → pivot (x-intercept doubles).
+    TEACHING FLOW:
+    1. Given: Base budget (Px=2, Py=1, I=12)
+    2. Formula: Y = (I - Px·X)/Py
+    3. Calculations: Three scenarios (I↑, I↓, Px↓)
+    4. Tables: Show budget combos for each scenario
+    5. Graph: Visualize parallel shift (income) vs pivot (price)
     """
 
     def construct(self):
         self.camera.background_color = C_BG
 
-        title = Text("Budget Line Shifts", font_size=38, color=WHITE).to_edge(UP)
-        sub   = Text("Income changes → parallel shift  |  Price changes → pivot",
-                     font_size=19, color=GRAY, slant=ITALIC).next_to(title, DOWN, buff=0.08)
-        self.play(Write(title), FadeIn(sub))
+        # ── HEADER ──────────────────────────────────────────────────────────
+        main_title = Text("Budget Line Shifts", font_size=40, color=WHITE).to_edge(UP)
+        subtitle = Text("Income changes → parallel shift  |  Price changes → pivot",
+                       font_size=17, color=GRAY, slant=ITALIC).next_to(main_title, DOWN, buff=0.06)
 
-        # ── STEP 1: base table ──────────────────────────────────────────────────
-        step1 = Text("Step 1 — Base Budget  (Px=2, Py=1, I=12)", font_size=19, color=YELLOW)
-        step1.next_to(sub, DOWN, buff=0.18)
-        self.play(FadeIn(step1))
+        self.play(Write(main_title), FadeIn(subtitle))
+        self.wait(0.8)
 
-        brows = [(str(x), str(12 - 2*x)) for x in range(0, 7)]
-        btbl  = _table(["Qty X", "Qty Y"], brows, [0.70, 0.70], row_h=0.32, accent=YELLOW)
-        btbl.next_to(step1, DOWN, buff=0.18)
-        self.play(FadeIn(btbl))
-        self.wait(1.0)
+        # ── STEP 1: GIVEN ────────────────────────────────────────────────────
+        step1_title = _section_title("Step 1 — Base Budget (Px=2, Py=1, I=12)")
+        step1_title.next_to(subtitle, DOWN, buff=0.4)
+        self.play(FadeIn(step1_title))
 
-        # ── STEP 2: axes + budget line animation ────────────────────────────────
-        step2 = Text("Step 2 & 3 — Graphing the Shifts", font_size=19, color=YELLOW)
-        step2.next_to(sub, DOWN, buff=0.18)
-        self.play(FadeOut(step1), FadeOut(btbl), FadeIn(step2))
+        formula = Text("Budget Line: Y = (12 - 2X) / 1 = 12 - 2X",
+                      font_size=17, color=YELLOW).next_to(step1_title, DOWN, buff=0.2)
+        self.play(FadeIn(formula))
 
-        ax = Axes(
-            x_range=[0, 12, 2], y_range=[0, 20, 4],
-            x_length=6.0, y_length=4.2,
-            axis_config={"include_numbers": False, "include_tip": False},
-        ).shift(RIGHT * 0.5 + DOWN * 0.4)
+        b_rows = [[str(x), str(12 - 2*x)] for x in range(0, 7)]
+        b_tbl = _table(["X", "Y"], b_rows, [0.65, 0.65], row_h=0.30, accent=YELLOW)
+        b_tbl.scale(0.80).next_to(formula, DOWN, buff=0.2)
 
-        x_lbl = _axis_label("Qty X").next_to(ax, DOWN, buff=0.05)
-        y_lbl = _axis_label("Qty Y").next_to(ax, LEFT, buff=0.05).rotate(PI/2)
-        x_tks = _x_nums(ax, [2, 4, 6, 8, 10, 12])
-        y_tks = _y_nums(ax, [4, 8, 12, 16, 18])
-        self.play(Create(ax), FadeIn(x_lbl), FadeIn(y_lbl), FadeIn(x_tks), FadeIn(y_tks))
+        self.play(FadeIn(b_tbl[0]))
+        for row in b_tbl[1:]:
+            self.play(FadeIn(row), run_time=0.12)
 
-        # base BL: y = 12 - 2x  (x: 0..6)
-        bl_base = ax.plot(lambda x: 12 - 2*x, x_range=[0, 6], color=WHITE, stroke_width=2.5)
-        lbl_base = Text("I=12 (Base)", font_size=14, color=WHITE).next_to(ax.c2p(0.3, 11.5), RIGHT, buff=0.06)
+        self.wait(0.8)
+        self.play(FadeOut(VGroup(step1_title, formula, b_tbl)))
+        self.wait(0.3)
+
+        # ── STEP 2: INCOME CHANGES (Parallel Shifts) ─────────────────────────
+        step2_title = _section_title("Step 2a — Income Rise: I=18")
+        step2_title.next_to(subtitle, DOWN, buff=0.4)
+        self.play(FadeIn(step2_title))
+
+        formula2a = Text("New Budget: Y = (18 - 2X) / 1 = 18 - 2X  (same slope, higher intercept)",
+                        font_size=15, color=YELLOW).next_to(step2_title, DOWN, buff=0.2)
+        self.play(FadeIn(formula2a))
+
+        b2a_rows = [[str(x), str(18 - 2*x)] for x in range(0, 10)]
+        b2a_tbl = _table(["X", "Y"], b2a_rows, [0.65, 0.65], row_h=0.28, accent=C_IC3)
+        b2a_tbl.scale(0.70).next_to(formula2a, DOWN, buff=0.15)
+
+        self.play(FadeIn(b2a_tbl[0]))
+        for row in b2a_tbl[1:4]:
+            self.play(FadeIn(row), run_time=0.12)
+
+        note1 = Text("→ Parallel shift (slope unchanged)", font_size=14, color=C_IC3).next_to(b2a_tbl, DOWN, buff=0.2)
+        self.play(Write(note1))
+
+        self.wait(0.6)
+        self.play(FadeOut(VGroup(step2_title, formula2a, b2a_tbl, note1)))
+        self.wait(0.3)
+
+        # ── STEP 2b: Income Fall ─────────────────────────────────────────────
+        step2b_title = _section_title("Step 2b — Income Fall: I=8")
+        step2b_title.next_to(subtitle, DOWN, buff=0.4)
+        self.play(FadeIn(step2b_title))
+
+        formula2b = Text("New Budget: Y = (8 - 2X) / 1 = 8 - 2X  (same slope, lower intercept)",
+                        font_size=15, color=YELLOW).next_to(step2b_title, DOWN, buff=0.2)
+        self.play(FadeIn(formula2b))
+
+        b2b_rows = [[str(x), str(8 - 2*x)] for x in range(0, 5)]
+        b2b_tbl = _table(["X", "Y"], b2b_rows, [0.65, 0.65], row_h=0.28, accent=C_IC1)
+        b2b_tbl.scale(0.70).next_to(formula2b, DOWN, buff=0.15)
+
+        self.play(FadeIn(b2b_tbl[0]))
+        for row in b2b_tbl[1:]:
+            self.play(FadeIn(row), run_time=0.12)
+
+        note2 = Text("→ Parallel shift  (slope unchanged)", font_size=14, color=C_IC1).next_to(b2b_tbl, DOWN, buff=0.2)
+        self.play(Write(note2))
+
+        self.wait(0.6)
+        self.play(FadeOut(VGroup(step2b_title, formula2b, b2b_tbl, note2)))
+        self.wait(0.3)
+
+        # ── STEP 3: PRICE CHANGE (Pivot) ─────────────────────────────────────
+        step3_title = _section_title("Step 3 — Price Fall: Px=1")
+        step3_title.next_to(subtitle, DOWN, buff=0.4)
+        self.play(FadeIn(step3_title))
+
+        formula3 = Text("New Budget: Y = (12 - 1·X) / 1 = 12 - X  (slope changes, y-intercept fixed at 12)",
+                       font_size=15, color=YELLOW).next_to(step3_title, DOWN, buff=0.2)
+        self.play(FadeIn(formula3))
+
+        b3_rows = [[str(x), str(12 - x)] for x in range(0, 13)]
+        b3_tbl = _table(["X", "Y"], b3_rows, [0.65, 0.65], row_h=0.26, accent=C_IC2)
+        b3_tbl.scale(0.65).next_to(formula3, DOWN, buff=0.15)
+
+        self.play(FadeIn(b3_tbl[0]))
+        for row in b3_tbl[1:5]:
+            self.play(FadeIn(row), run_time=0.12)
+
+        note3 = Text("→ Pivot (x-intercept doubles, slope changes)", font_size=14, color=C_IC2).next_to(b3_tbl, DOWN, buff=0.2)
+        self.play(Write(note3))
+
+        self.wait(0.6)
+        self.play(FadeOut(VGroup(step3_title, formula3, b3_tbl, note3)))
+        self.wait(0.3)
+
+        # ── STEP 4: GRAPH ────────────────────────────────────────────────────
+        step4_title = _section_title("Step 4 — Visualize All Shifts")
+        step4_title.next_to(subtitle, DOWN, buff=0.4)
+        self.play(FadeIn(step4_title))
+
+        ax = Axes(x_range=[0, 14, 2], y_range=[0, 20, 4],
+                  x_length=6.0, y_length=4.0,
+                  axis_config={"include_numbers": False, "include_tip": False})
+        ax.shift(RIGHT * 0.5 + DOWN * 0.5)
+
+        x_tks = VGroup(*[Text(str(i), font_size=11, color=GRAY).next_to(ax.c2p(i, 0), DOWN, buff=0.05) for i in [2, 4, 6, 8, 10, 12]])
+        y_tks = VGroup(*[Text(str(i), font_size=11, color=GRAY).next_to(ax.c2p(0, i), LEFT, buff=0.05) for i in [4, 8, 12, 16]])
+        x_lbl = Text("Qty X", font_size=13, color=GRAY).next_to(ax, DOWN, buff=0.07)
+        y_lbl = Text("Qty Y", font_size=13, color=GRAY).rotate(PI/2).next_to(ax, LEFT, buff=0.07)
+
+        self.play(Create(ax), FadeIn(x_tks), FadeIn(y_tks), FadeIn(x_lbl), FadeIn(y_lbl))
+
+        # Base: Y = 12 - 2X
+        bl_base = ax.plot(lambda x: 12 - 2*x, x_range=[0, 6], color=WHITE, stroke_width=2.3)
+        lbl_base = Text("Base (I=12)", font_size=12, color=WHITE).next_to(ax.c2p(0.5, 11), RIGHT, buff=0.04)
         self.play(Create(bl_base), Write(lbl_base))
-        self.wait(0.5)
 
-        # income rise: y = 18 - 2x  (x: 0..9)
-        bl_up = ax.plot(lambda x: 18 - 2*x, x_range=[0, 9], color=C_IC3, stroke_width=2, stroke_opacity=0.9)
-        lbl_up = Text("I=18 (Higher)", font_size=14, color=C_IC3).next_to(ax.c2p(0.3, 17.5), RIGHT, buff=0.06)
+        # Up: Y = 18 - 2X
+        bl_up = ax.plot(lambda x: 18 - 2*x, x_range=[0, 9], color=C_IC3, stroke_width=2, stroke_opacity=0.85)
+        lbl_up = Text("I↑=18", font_size=11, color=C_IC3).next_to(ax.c2p(0.5, 17), RIGHT, buff=0.04)
         self.play(Create(bl_up), Write(lbl_up))
 
-        # income fall: y = 8 - 2x  (x: 0..4)
-        bl_dn = ax.plot(lambda x: 8 - 2*x, x_range=[0, 4], color=C_IC1, stroke_width=2, stroke_opacity=0.9)
-        lbl_dn = Text("I=8 (Lower)", font_size=14, color=C_IC1).next_to(ax.c2p(0.3, 7.5), RIGHT, buff=0.06)
+        # Down: Y = 8 - 2X
+        bl_dn = ax.plot(lambda x: 8 - 2*x, x_range=[0, 4], color=C_IC1, stroke_width=2, stroke_opacity=0.85)
+        lbl_dn = Text("I↓=8", font_size=11, color=C_IC1).next_to(ax.c2p(0.5, 7), RIGHT, buff=0.04)
         self.play(Create(bl_dn), Write(lbl_dn))
 
-        note1 = Text("Income change → parallel shift (same slope)", font_size=15, color=YELLOW).to_edge(DOWN, buff=0.55)
-        self.play(Write(note1))
-        self.wait(1.2)
+        note_parallel = Text("Income changes → parallel shifts (same slope)", font_size=13, color=YELLOW).to_edge(DOWN, buff=0.7)
+        self.play(Write(note_parallel))
+        self.wait(1.0)
 
-        # price pivot: Px=1 (halved) → y = 12 - x (x: 0..12)
-        bl_px = ax.plot(lambda x: 12 - x, x_range=[0, 12], color=C_IC2, stroke_width=2,
-                        stroke_opacity=0.9)
-        lbl_px = Text("Px=1 (Pivot)", font_size=14, color=C_IC2).next_to(ax.c2p(9, 3), UR, buff=0.06)
+        # Pivot: Y = 12 - X
+        bl_px = ax.plot(lambda x: 12 - x, x_range=[0, 12], color=C_IC2, stroke_width=2, stroke_opacity=0.85)
+        lbl_px = Text("Px↓=1", font_size=11, color=C_IC2).next_to(ax.c2p(9.5, 2.5), UR, buff=0.04)
         self.play(Create(bl_px), Write(lbl_px))
 
-        note2 = Text("Px falls → x-intercept moves right; y-intercept unchanged → pivot",
-                     font_size=15, color=C_IC2).to_edge(DOWN, buff=0.55)
-        self.play(ReplacementTransform(note1, note2))
-        self.wait(1.8)
+        note_pivot = Text("Price fall → pivot (slope changes, y-intercept fixed)", font_size=13, color=YELLOW).to_edge(DOWN, buff=0.7)
+        self.play(ReplacementTransform(note_parallel, note_pivot))
 
-        crumb = _breadcrumb("Next: Income & Substitution Effects — breaking down a price change")
+        self.wait(1.5)
+
+        crumb = _breadcrumb("Next: Income & Substitution Effects")
         self.play(FadeIn(crumb))
-        self.wait(1.2)
+        self.wait(1.0)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# SCENE 5 — Income & Substitution Effects (Hicks Decomposition)
+# SCENE 5 — Income & Substitution Effects
 # ═══════════════════════════════════════════════════════════════════════════════
 class IncomeSubstitutionScene(Scene):
     """
-    Step 1 – Summary table: Points A, C, B with coordinates and effects.
-    Step 2 – Graph showing A→C (Substitution Effect) and C→B (Income Effect).
-
-    Data (U = x·y, Px falls from 2 → 1, Py=1, I=12):
-      A = (3,  6)   original equilibrium on U=18
-      C = (√18, √18) ≈ (4.24, 4.24)  same IC after price fall, Hicks compensated BL
-      B = (6,  6)   new equilibrium on U=36 with new BL (Px=1, I=12)
-
-      SE = Cx − Ax = 4.24 − 3 ≈ +1.24   (more X due to cheaper price)
-      IE = Bx − Cx = 6 − 4.24 ≈ +1.76   (more X due to higher real income)
-      TE = Bx − Ax = 6 − 3 = +3          (total: buy 3 more units of X)
+    TEACHING FLOW:
+    1. Given: Utility function U=X·Y, price change Px: 2→1, I=12
+    2. Formula: Decompose total effect into SE and IE
+    3. Calculations: Find A, C, B points
+    4. Table: Summary of three equilibria
+    5. Graph: Show A→C→B path
     """
 
     def construct(self):
         self.camera.background_color = C_BG
 
-        title = Text("Income & Substitution Effects (Hicks)", font_size=34, color=WHITE).to_edge(UP)
-        sub   = Text("Px falls: 2 → 1  |  Py=1  |  I=12",
-                     font_size=19, color=GRAY, slant=ITALIC).next_to(title, DOWN, buff=0.08)
-        self.play(Write(title), FadeIn(sub))
+        # ── HEADER ──────────────────────────────────────────────────────────
+        main_title = Text("Income & Substitution Effects (Hicks)", font_size=36, color=WHITE).to_edge(UP)
+        subtitle = Text("Px: 2→1  |  Py=1  |  I=12", font_size=17, color=GRAY, slant=ITALIC).next_to(main_title, DOWN, buff=0.06)
 
-        # ── STEP 1: summary table ───────────────────────────────────────────────
-        step1 = Text("Step 1 — Decomposition Summary Table", font_size=19, color=YELLOW)
-        step1.next_to(sub, DOWN, buff=0.15)
-        self.play(FadeIn(step1))
+        self.play(Write(main_title), FadeIn(subtitle))
+        self.wait(0.8)
 
-        tbl = _table(
-            headers=["Point", "Qx", "Qy", "On IC", "Meaning"],
-            rows=[
-                ["A", "3",    "6",    "U=18", "Original equilibrium"],
-                ["C", "4.24", "4.24", "U=18", "Compensated (SE only)"],
-                ["B", "6",    "6",    "U=36", "New equilibrium"],
-            ],
-            col_widths=[0.55, 0.50, 0.50, 0.65, 2.20],
-            row_h=0.36, accent=YELLOW,
+        # ── STEP 1: GIVEN ────────────────────────────────────────────────────
+        step1_title = _section_title("Step 1 — Given: Utility & Price Change")
+        step1_title.next_to(subtitle, DOWN, buff=0.4)
+        self.play(FadeIn(step1_title))
+
+        given = VGroup(
+            Text("Utility function: U = X·Y", font_size=16, color=C_CALC),
+            Text("Original: Px=2, Py=1, I=12  →  Equilibrium A(3, 6)", font_size=16, color=C_CALC),
+            Text("New: Px=1, Py=1, I=12  →  Equilibrium B(6, 6)", font_size=16, color=C_CALC),
+        ).arrange(DOWN, buff=0.18).next_to(step1_title, DOWN, buff=0.25)
+
+        for line in given:
+            self.play(FadeIn(line))
+
+        self.wait(0.8)
+        self.play(FadeOut(VGroup(step1_title, given)))
+        self.wait(0.3)
+
+        # ── STEP 2: FORMULA & CONCEPT ────────────────────────────────────────
+        step2_title = _section_title("Step 2 — Decomposition")
+        step2_title.next_to(subtitle, DOWN, buff=0.4)
+        self.play(FadeIn(step2_title))
+
+        concept = VGroup(
+            Text("Total Effect (TE): A → B (quantity change = 3)", font_size=16, color=YELLOW),
+            Text("Substitution Effect (SE): A → C (on same IC, cheaper price)", font_size=16, color=C_MU),
+            Text("Income Effect (IE): C → B (higher real income)", font_size=16, color=C_IC3),
+        ).arrange(DOWN, buff=0.18).next_to(step2_title, DOWN, buff=0.25)
+
+        for line in concept:
+            self.play(FadeIn(line))
+
+        self.wait(1.0)
+        self.play(FadeOut(VGroup(step2_title, concept)))
+        self.wait(0.3)
+
+        # ── STEP 3: CALCULATIONS ────────────────────────────────────────────
+        step3_title = _section_title("Step 3 — Calculate Points A, C, B")
+        step3_title.next_to(subtitle, DOWN, buff=0.4)
+        self.play(FadeIn(step3_title))
+
+        calcs_section = VGroup(
+            Text("Point A (original equilibrium):", font_size=15, color=YELLOW),
+            Text("  MRS = Px/Py = 2, on U=18: y/x=2 → x=3, y=6  →  A(3,6)", font_size=14, color=C_CALC),
+            Text("", font_size=8),
+            Text("Point B (new equilibrium):", font_size=15, color=YELLOW),
+            Text("  MRS = Px/Py = 1, on new BL y=12-x: x=y → x=6, y=6  →  B(6,6)", font_size=14, color=C_CALC),
+            Text("", font_size=8),
+            Text("Point C (compensated, Hicks):", font_size=15, color=YELLOW),
+            Text("  MRS = 1 on U=18: x=y → √18≈4.24  →  C(4.24,4.24)", font_size=14, color=C_CALC),
+        ).arrange(DOWN, buff=0.12, aligned_edge=LEFT).next_to(step3_title, DOWN, buff=0.2)
+
+        for line in calcs_section:
+            self.play(FadeIn(line), run_time=0.15)
+
+        self.wait(0.8)
+        self.play(FadeOut(VGroup(step3_title, calcs_section)))
+        self.wait(0.3)
+
+        # ── STEP 4: TABLE ────────────────────────────────────────────────────
+        step4_title = _section_title("Step 4 — Summary Table")
+        step4_title.next_to(subtitle, DOWN, buff=0.4)
+        self.play(FadeIn(step4_title))
+
+        summary_rows = [
+            ["A", "3.00", "6.00", "18", "Original"],
+            ["C", "4.24", "4.24", "18", "Compensated (SE)"],
+            ["B", "6.00", "6.00", "36", "New equilibrium"],
+        ]
+        summary_tbl = _table(
+            headers=["Point", "Qx", "Qy", "U", "Status"],
+            rows=summary_rows,
+            col_widths=[0.55, 0.70, 0.70, 0.55, 1.50],
+            row_h=0.32, accent=YELLOW
         )
-        eff_tbl = _table(
-            headers=["Effect", "ΔQx", "Interpretation"],
-            rows=[
-                ["Substitution (SE)", "+1.24", "A → C  (Px cheaper, stay on U=18)"],
-                ["Income (IE)",       "+1.76", "C → B  (higher real income)"],
-                ["Total (TE)",        "+3.00", "A → B  (SE + IE)"],
-            ],
-            col_widths=[1.50, 0.65, 2.50],
-            row_h=0.36, accent=C_MU,
+
+        effects_rows = [
+            ["Substitution (A→C)", "+1.24", "Cheaper Px, stay on U=18"],
+            ["Income (C→B)", "+1.76", "Higher real income"],
+            ["Total (A→B)", "+3.00", "SE + IE"],
+        ]
+        effects_tbl = _table(
+            headers=["Effect", "ΔQx", "Meaning"],
+            rows=effects_rows,
+            col_widths=[1.50, 0.70, 2.00],
+            row_h=0.32, accent=C_MU
         )
-        VGroup(tbl, eff_tbl).arrange(DOWN, buff=0.25).next_to(step1, DOWN, buff=0.18)
-        self.play(FadeIn(tbl), run_time=0.6)
-        self.play(FadeIn(eff_tbl), run_time=0.6)
-        self.wait(1.2)
 
-        # ── STEP 2: graph ───────────────────────────────────────────────────────
-        step2 = Text("Step 2 — Graph: A → C → B", font_size=19, color=YELLOW)
-        step2.next_to(sub, DOWN, buff=0.15)
-        self.play(FadeOut(step1), FadeOut(tbl), FadeOut(eff_tbl), FadeIn(step2))
+        both_tbls = VGroup(summary_tbl, effects_tbl).arrange(DOWN, buff=0.25).next_to(step4_title, DOWN, buff=0.2)
 
-        ax = Axes(
-            x_range=[0, 10, 1], y_range=[0, 14, 2],
-            x_length=5.8, y_length=4.2,
-            axis_config={"include_numbers": False, "include_tip": False},
-        ).shift(RIGHT * 0.5 + DOWN * 0.4)
+        self.play(FadeIn(summary_tbl[0]))
+        for row in summary_tbl[1:]:
+            self.play(FadeIn(row), run_time=0.15)
 
-        x_lbl = _axis_label("Qty X").next_to(ax, DOWN, buff=0.05)
-        y_lbl = _axis_label("Qty Y").next_to(ax, LEFT, buff=0.05).rotate(PI/2)
-        x_tks = _x_nums(ax, [1, 2, 3, 4, 5, 6, 7, 8, 9])
-        y_tks = _y_nums(ax, [2, 4, 6, 8, 10, 12])
-        self.play(Create(ax), FadeIn(x_lbl), FadeIn(y_lbl), FadeIn(x_tks), FadeIn(y_tks))
+        self.play(FadeIn(effects_tbl[0]))
+        for row in effects_tbl[1:]:
+            self.play(FadeIn(row), run_time=0.15)
+
+        self.wait(1.0)
+        self.play(FadeOut(VGroup(step4_title, both_tbls)))
+        self.wait(0.3)
+
+        # ── STEP 5: GRAPH ────────────────────────────────────────────────────
+        step5_title = _section_title("Step 5 — Visualize A → C → B")
+        step5_title.next_to(subtitle, DOWN, buff=0.4)
+        self.play(FadeIn(step5_title))
+
+        ax = Axes(x_range=[0, 10, 1], y_range=[0, 14, 2],
+                  x_length=5.6, y_length=4.0,
+                  axis_config={"include_numbers": False, "include_tip": False})
+        ax.shift(RIGHT * 0.5 + DOWN * 0.5)
+
+        x_tks = VGroup(*[Text(str(i), font_size=11, color=GRAY).next_to(ax.c2p(i, 0), DOWN, buff=0.05) for i in range(1, 10)])
+        y_tks = VGroup(*[Text(str(i), font_size=11, color=GRAY).next_to(ax.c2p(0, i), LEFT, buff=0.05) for i in range(2, 14, 2)])
+        x_lbl = Text("X", font_size=13, color=GRAY).next_to(ax, DOWN, buff=0.07)
+        y_lbl = Text("Y", font_size=13, color=GRAY).rotate(PI/2).next_to(ax, LEFT, buff=0.07)
+
+        self.play(Create(ax), FadeIn(x_tks), FadeIn(y_tks), FadeIn(x_lbl), FadeIn(y_lbl))
 
         # ICs
-        ic18 = ax.plot(lambda x: 18/x, x_range=[1.3, 9.5], color=C_IC2, stroke_width=2)
-        ic36 = ax.plot(lambda x: 36/x, x_range=[2.6, 9.5], color=C_IC3, stroke_width=2)
-        lbl18 = Text("U=18", font_size=13, color=C_IC2).next_to(ax.c2p(9.3, 18/9.3), RIGHT, buff=0.04)
-        lbl36 = Text("U=36", font_size=13, color=C_IC3).next_to(ax.c2p(9.3, 36/9.3), RIGHT, buff=0.04)
+        ic18 = ax.plot(lambda x: 18/x, x_range=[1.2, 9.5], color=C_IC2, stroke_width=2)
+        ic36 = ax.plot(lambda x: 36/x, x_range=[2.4, 9.5], color=C_IC3, stroke_width=2)
+        lbl18 = Text("U=18", font_size=12, color=C_IC2).next_to(ax.c2p(9.2, 18/9.2), RIGHT, buff=0.04)
+        lbl36 = Text("U=36", font_size=12, color=C_IC3).next_to(ax.c2p(9.2, 36/9.2), RIGHT, buff=0.04)
         self.play(Create(ic18), Create(ic36), Write(lbl18), Write(lbl36))
 
         # Budget lines
-        # Original BL: Px=2, I=12 → y=12-2x (x:0..6)
         bl_orig = ax.plot(lambda x: 12 - 2*x, x_range=[0, 6], color=C_IC1, stroke_width=1.8)
-        # Compensated BL (same slope as new BL but tangent to U=18): Px=1
-        # compensated income needed: MRS = Px/Py=1, on U=18: y/x=1→x=y; xy=18→x=y=√18≈4.24
-        # compensated I = 1*4.24+1*4.24 = 8.49
-        bl_comp = ax.plot(lambda x: 8.49 - x, x_range=[0, 8.49], color=GRAY, stroke_width=1.5,
-                          stroke_opacity=0.7)
-        # New BL: Px=1, I=12 → y=12-x (x:0..12)
+        bl_comp = ax.plot(lambda x: 8.49 - x, x_range=[0, 8.49], color=GRAY, stroke_width=1.5, stroke_opacity=0.7)
         bl_new = ax.plot(lambda x: 12 - x, x_range=[0, 12], color=WHITE, stroke_width=1.8)
 
         self.play(Create(bl_orig), Create(bl_comp), Create(bl_new))
-        lbl_comp = Text("Comp. BL", font_size=12, color=GRAY).next_to(ax.c2p(8, 0.49), UR, buff=0.04)
-        lbl_new  = Text("New BL", font_size=12, color=WHITE).next_to(ax.c2p(10, 2.0), UR, buff=0.04)
-        self.play(Write(lbl_comp), Write(lbl_new))
 
-        # Points A, C, B
-        pt_A = Dot(ax.c2p(3, 6), color=C_IC1, radius=0.09)
-        pt_C = Dot(ax.c2p(4.24, 4.24), color=GRAY, radius=0.09)
-        pt_B = Dot(ax.c2p(6, 6), color=C_IC3, radius=0.09)
-        lA = Text("A(3,6)", font_size=13, color=C_IC1).next_to(ax.c2p(3, 6), UL, buff=0.06)
-        lC = Text("C(4.24,4.24)", font_size=12, color=GRAY).next_to(ax.c2p(4.24, 4.24), DR, buff=0.06)
-        lB = Text("B(6,6)", font_size=13, color=C_IC3).next_to(ax.c2p(6, 6), UR, buff=0.06)
-        self.play(FadeIn(pt_A), FadeIn(pt_C), FadeIn(pt_B),
-                  Write(lA), Write(lC), Write(lB))
+        lbl_orig = Text("Orig BL", font_size=11, color=C_IC1).next_to(ax.c2p(0.5, 11), RIGHT, buff=0.03)
+        lbl_comp = Text("Comp", font_size=10, color=GRAY).next_to(ax.c2p(7.5, 0.99), UR, buff=0.02)
+        lbl_new = Text("New BL", font_size=11, color=WHITE).next_to(ax.c2p(9.5, 2.5), UR, buff=0.03)
 
-        # SE and IE arrows
-        arr_SE = Arrow(ax.c2p(3, 0.3), ax.c2p(4.24, 0.3), color=C_MU,
-                       buff=0, stroke_width=2, max_tip_length_to_length_ratio=0.15)
-        arr_IE = Arrow(ax.c2p(4.24, 0.3), ax.c2p(6, 0.3), color=C_IC3,
-                       buff=0, stroke_width=2, max_tip_length_to_length_ratio=0.15)
-        se_lbl = Text("SE +1.24", font_size=12, color=C_MU).next_to(arr_SE, DOWN, buff=0.05)
-        ie_lbl = Text("IE +1.76", font_size=12, color=C_IC3).next_to(arr_IE, DOWN, buff=0.05)
+        self.play(Write(lbl_orig), Write(lbl_comp), Write(lbl_new))
+
+        # Points
+        pt_A = Dot(ax.c2p(3, 6), color=C_IC1, radius=0.10)
+        pt_C = Dot(ax.c2p(4.24, 4.24), color=GRAY, radius=0.10)
+        pt_B = Dot(ax.c2p(6, 6), color=C_IC3, radius=0.10)
+
+        lA = Text("A(3,6)", font_size=11, color=C_IC1).next_to(ax.c2p(3, 6), UL, buff=0.06)
+        lC = Text("C(4.24,4.24)", font_size=10, color=GRAY).next_to(ax.c2p(4.24, 4.24), DR, buff=0.05)
+        lB = Text("B(6,6)", font_size=11, color=C_IC3).next_to(ax.c2p(6, 6), UR, buff=0.06)
+
+        self.play(FadeIn(pt_A), FadeIn(pt_C), FadeIn(pt_B), Write(lA), Write(lC), Write(lB))
+
+        # Arrows & effects
+        arr_SE = Arrow(ax.c2p(3, 0.4), ax.c2p(4.24, 0.4), color=C_MU, buff=0, stroke_width=2)
+        arr_IE = Arrow(ax.c2p(4.24, 0.4), ax.c2p(6, 0.4), color=C_IC3, buff=0, stroke_width=2)
+
+        se_lbl = Text("SE +1.24", font_size=11, color=C_MU).next_to(arr_SE, DOWN, buff=0.04)
+        ie_lbl = Text("IE +1.76", font_size=11, color=C_IC3).next_to(arr_IE, DOWN, buff=0.04)
+
         self.play(Create(arr_SE), Write(se_lbl))
         self.play(Create(arr_IE), Write(ie_lbl))
 
-        final = Text("TE = SE + IE = 1.24 + 1.76 = 3.00 units", font_size=15, color=YELLOW).to_edge(DOWN, buff=0.55)
+        final = Text("TE = SE + IE = 1.24 + 1.76 = 3.00", font_size=14, color=YELLOW).to_edge(DOWN, buff=0.7)
         self.play(Write(final))
-        self.wait(1.8)
 
-        crumb = _breadcrumb("Next: Consumer Surplus — value above what you pay")
+        self.wait(1.5)
+
+        crumb = _breadcrumb("Next: Consumer Surplus — benefit from exchange")
         self.play(FadeIn(crumb))
-        self.wait(1.2)
+        self.wait(1.0)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -598,189 +943,314 @@ class IncomeSubstitutionScene(Scene):
 # ═══════════════════════════════════════════════════════════════════════════════
 class ConsumerSurplusScene(Scene):
     """
-    Step 1 – Data table: price-quantity schedule + CS per unit.
-    Step 2 – Demand curve + horizontal price line + shaded CS triangle.
-
-    Demand: P = 12 − Q
-    Market price P* = 4  →  Q* = 8
-    CS = ½ × base × height = ½ × 8 × (12−4) = ½ × 8 × 8 = 32
+    TEACHING FLOW:
+    1. Given: Demand function P=12-Q, market price P*=4
+    2. Formula: CS per unit = WTP - P*, Total CS = ½ × base × height
+    3. Calculations: Compute CS for each unit, sum
+    4. Table: Price-quantity schedule with per-unit CS
+    5. Graph: Demand curve, price line, shaded CS triangle
     """
 
     def construct(self):
         self.camera.background_color = C_BG
 
-        title = Text("Consumer Surplus", font_size=40, color=WHITE).to_edge(UP)
-        sub   = Text("Demand: P = 12 − Q  |  Market price P* = ₦4",
-                     font_size=19, color=GRAY, slant=ITALIC).next_to(title, DOWN, buff=0.08)
-        self.play(Write(title), FadeIn(sub))
+        # ── HEADER ──────────────────────────────────────────────────────────
+        main_title = Text("Consumer Surplus", font_size=42, color=WHITE).to_edge(UP)
+        subtitle = Text("Demand: P = 12 - Q  |  Market Price P* = ₦4",
+                       font_size=17, color=GRAY, slant=ITALIC).next_to(main_title, DOWN, buff=0.06)
 
-        # ── STEP 1: data table ──────────────────────────────────────────────────
-        step1 = Text("Step 1 — Price-Quantity Schedule & Consumer Surplus per Unit",
-                     font_size=18, color=YELLOW).next_to(sub, DOWN, buff=0.18)
-        self.play(FadeIn(step1))
+        self.play(Write(main_title), FadeIn(subtitle))
+        self.wait(0.8)
+
+        # ── STEP 1: GIVEN ────────────────────────────────────────────────────
+        step1_title = _section_title("Step 1 — Given: Demand Function")
+        step1_title.next_to(subtitle, DOWN, buff=0.4)
+        self.play(FadeIn(step1_title))
+
+        given = VGroup(
+            Text("Demand Curve: P = 12 - Q", font_size=17, color=C_CALC),
+            Text("Market Price: P* = ₦4", font_size=17, color=C_CALC),
+            Text("Quantity demanded at P*=4: Q* = 12 - 4 = 8 units", font_size=17, color=C_CALC),
+        ).arrange(DOWN, buff=0.18).next_to(step1_title, DOWN, buff=0.25)
+
+        for line in given:
+            self.play(FadeIn(line))
+
+        self.wait(0.8)
+        self.play(FadeOut(VGroup(step1_title, given)))
+        self.wait(0.3)
+
+        # ── STEP 2: FORMULA & CONCEPT ────────────────────────────────────────
+        step2_title = _section_title("Step 2 — Consumer Surplus Formula")
+        step2_title.next_to(subtitle, DOWN, buff=0.4)
+        self.play(FadeIn(step2_title))
+
+        formula_cs = VGroup(
+            Text("CS per unit = Willingness to Pay - Market Price",
+                 font_size=16, color=C_MU),
+            Text("                 = P(Q) - P*",
+                 font_size=16, color=C_MU),
+            Text("", font_size=8),
+            Text("Total CS = ½ × base × height (triangle area)",
+                 font_size=16, color=YELLOW),
+            Text("           = ½ × 8 × (12 - 4) = ½ × 8 × 8 = 32",
+                 font_size=16, color=YELLOW),
+        ).arrange(DOWN, buff=0.15, aligned_edge=LEFT).next_to(step2_title, DOWN, buff=0.25)
+
+        for line in formula_cs:
+            self.play(FadeIn(line), run_time=0.15)
+
+        self.wait(0.8)
+        self.play(FadeOut(VGroup(step2_title, formula_cs)))
+        self.wait(0.3)
+
+        # ── STEP 3: TABLE ────────────────────────────────────────────────────
+        step3_title = _section_title("Step 3 — CS per Unit Calculation")
+        step3_title.next_to(subtitle, DOWN, buff=0.4)
+        self.play(FadeIn(step3_title))
 
         P_star = 4
-        rows = []
+        rows_cs = []
         for q in range(1, 9):
-            p_will = 12 - q
-            cs_unit = p_will - P_star
-            rows.append([str(q), f"₦{p_will}", f"₦{P_star}", f"₦{cs_unit}"])
+            p_wtp = 12 - q
+            cs_unit = p_wtp - P_star
+            rows_cs.append([str(q), f"₦{p_wtp}", f"₦{P_star}", f"₦{cs_unit}"])
 
-        tbl = _table(
-            headers=["Q", "Max Willingness (P)", "Market P*", "CS per unit"],
-            rows=rows,
-            col_widths=[0.45, 1.65, 0.90, 0.90],
-            row_h=0.33, accent=YELLOW,
+        tbl_cs = _table(
+            headers=["Q", "WTP (P)", "P*", "CS/unit"],
+            rows=rows_cs,
+            col_widths=[0.45, 0.75, 0.65, 0.75],
+            row_h=0.30, accent=YELLOW
         )
-        tbl.scale(0.90).next_to(step1, DOWN, buff=0.15)
-        self.play(FadeIn(tbl))
+        tbl_cs.scale(0.85).next_to(step3_title, DOWN, buff=0.25)
 
-        total_note = Text("Total CS = ½ × 8 × 8 = ₦32  (triangle area)", font_size=16, color=YELLOW)
-        total_note.to_edge(DOWN, buff=0.55)
+        self.play(FadeIn(tbl_cs[0]))
+        for row in tbl_cs[1:]:
+            self.play(FadeIn(row), run_time=0.12)
+
+        total_note = Text("Total CS = 8+7+6+5+4+3+2+1 = ₦32",
+                         font_size=15, color=YELLOW).next_to(tbl_cs, DOWN, buff=0.2)
         self.play(Write(total_note))
-        self.wait(1.2)
 
-        # ── STEP 2: demand curve + shading ─────────────────────────────────────
-        step2 = Text("Step 2 — Consumer Surplus on Graph", font_size=19, color=YELLOW)
-        step2.next_to(sub, DOWN, buff=0.18)
-        self.play(FadeOut(step1), FadeOut(tbl), FadeOut(total_note), FadeIn(step2))
+        self.wait(0.8)
+        self.play(FadeOut(VGroup(step3_title, tbl_cs, total_note)))
+        self.wait(0.3)
 
-        ax = Axes(
-            x_range=[0, 12, 1], y_range=[0, 14, 2],
-            x_length=5.8, y_length=4.2,
-            axis_config={"include_numbers": False, "include_tip": False},
-        ).shift(RIGHT * 0.4 + DOWN * 0.4)
+        # ── STEP 4: GRAPH ────────────────────────────────────────────────────
+        step4_title = _section_title("Step 4 — Graph: Demand Curve & CS")
+        step4_title.next_to(subtitle, DOWN, buff=0.4)
+        self.play(FadeIn(step4_title))
 
-        x_lbl = _axis_label("Quantity (Q)").next_to(ax, DOWN, buff=0.05)
-        y_lbl = _axis_label("Price (P)").next_to(ax, LEFT, buff=0.05).rotate(PI/2)
-        x_tks = _x_nums(ax, list(range(0, 11, 2)))
-        y_tks = _y_nums(ax, [2, 4, 6, 8, 10, 12])
-        self.play(Create(ax), FadeIn(x_lbl), FadeIn(y_lbl), FadeIn(x_tks), FadeIn(y_tks))
+        ax = Axes(x_range=[0, 12, 1], y_range=[0, 14, 2],
+                  x_length=5.8, y_length=4.0,
+                  axis_config={"include_numbers": False, "include_tip": False})
+        ax.shift(RIGHT * 0.3 + DOWN * 0.5)
 
-        demand = ax.plot(lambda q: 12 - q, x_range=[0, 11], color=C_DEMAND, stroke_width=2.5)
-        d_lbl  = Text("D: P=12-Q", font_size=15, color=C_DEMAND).next_to(ax.c2p(0.3, 11.5), RIGHT, buff=0.06)
+        x_tks = VGroup(*[Text(str(i), font_size=11, color=GRAY).next_to(ax.c2p(i, 0), DOWN, buff=0.05) for i in [2, 4, 6, 8, 10]])
+        y_tks = VGroup(*[Text(str(i), font_size=11, color=GRAY).next_to(ax.c2p(0, i), LEFT, buff=0.05) for i in [2, 4, 6, 8, 10, 12]])
+        x_lbl = Text("Quantity (Q)", font_size=13, color=GRAY).next_to(ax, DOWN, buff=0.07)
+        y_lbl = Text("Price (P)", font_size=13, color=GRAY).rotate(PI/2).next_to(ax, LEFT, buff=0.07)
+
+        self.play(Create(ax), FadeIn(x_tks), FadeIn(y_tks), FadeIn(x_lbl), FadeIn(y_lbl))
+
+        # Demand curve: P = 12 - Q
+        demand = ax.plot(lambda q: 12 - q, x_range=[0, 11], color=C_DEMAND, stroke_width=2.4)
+        d_lbl = Text("D: P=12-Q", font_size=13, color=C_DEMAND).next_to(ax.c2p(0.5, 11.5), RIGHT, buff=0.04)
         self.play(Create(demand), Write(d_lbl))
 
-        # price line P*=4
-        p_line = ax.plot(lambda q: 4, x_range=[0, 11], color=WHITE, stroke_width=1.8,
-                         stroke_opacity=0.8)
-        p_lbl  = Text("P*=4", font_size=14, color=WHITE).next_to(ax.c2p(0, 4), LEFT, buff=0.06)
+        # Price line P* = 4
+        p_line = ax.plot(lambda q: 4, x_range=[0, 11], color=WHITE, stroke_width=1.8, stroke_opacity=0.8)
+        p_lbl = Text("P*=4", font_size=12, color=WHITE).next_to(ax.c2p(0.2, 4), LEFT, buff=0.05)
         self.play(Create(p_line), Write(p_lbl))
 
-        # Q* = 8 vertical dashed line
-        q_line = DashedLine(ax.c2p(8, 0), ax.c2p(8, 4), color=GRAY, stroke_width=1.2)
-        q_lbl  = Text("Q*=8", font_size=13, color=GRAY).next_to(ax.c2p(8, 0), DOWN, buff=0.10)
+        # Q* = 8 line
+        q_line = DashedLine(ax.c2p(8, 0), ax.c2p(8, 4), color=GRAY, stroke_width=1.1, dash_length=0.08)
+        q_lbl = Text("Q*=8", font_size=12, color=GRAY).next_to(ax.c2p(8, 0), DOWN, buff=0.08)
         self.play(Create(q_line), Write(q_lbl))
 
-        # shade CS triangle using polygon
-        cs_poly = Polygon(
-            ax.c2p(0, 12),   # top of demand (intercept)
-            ax.c2p(8, 4),    # equilibrium point
-            ax.c2p(0, 4),    # left on price line
-            color=C_SHADE, fill_color=C_SHADE, fill_opacity=0.35, stroke_width=0,
+        self.wait(0.5)
+
+        # CS triangle shading
+        cs_triangle = Polygon(
+            ax.c2p(0, 12),    # P-intercept (12, 0)
+            ax.c2p(8, 4),     # Equilibrium point
+            ax.c2p(0, 4),     # Vertical drop at Q=0
+            color=BLUE, fill_color=BLUE, fill_opacity=0.3, stroke_width=0
         )
-        self.play(FadeIn(cs_poly))
+        self.play(FadeIn(cs_triangle))
 
-        cs_text = Text("CS = ₦32", font_size=18, color=C_SHADE).move_to(ax.c2p(2.0, 8))
-        self.play(Write(cs_text))
+        cs_label = Text("CS = ₦32", font_size=18, color=BLUE).move_to(ax.c2p(2.5, 8))
+        self.play(Write(cs_label))
 
-        note = Text("Consumer Surplus = area where willingness to pay > market price",
-                    font_size=15, color=YELLOW).to_edge(DOWN, buff=0.55)
-        self.play(Write(note))
-        self.wait(1.8)
+        note_cs = Text("Consumer Surplus = area above price line, below demand curve",
+                      font_size=14, color=YELLOW).to_edge(DOWN, buff=0.7)
+        self.play(Write(note_cs))
 
-        crumb = _breadcrumb("Next: From Diminishing MU to the Demand Curve — connecting the two laws")
+        self.wait(1.5)
+
+        crumb = _breadcrumb("Next: Diminishing MU Explains the Demand Curve")
         self.play(FadeIn(crumb))
-        self.wait(1.2)
+        self.wait(1.0)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# SCENE 7 — From Diminishing MU to the Demand Curve
+# SCENE 7 — Diminishing MU to Demand Curve
 # ═══════════════════════════════════════════════════════════════════════════════
 class DiminishingMUDemandScene(Scene):
     """
-    Step 1 – MU table (same data as Scene 1) — price a consumer is willing to pay.
-    Step 2 – Plot MU as a downward-sloping demand curve.
-    Concept: The demand curve IS the MU curve (willingness to pay).
+    TEACHING FLOW:
+    1. Given: MU data (same as Scene 1)
+    2. Formula: MU = Willingness to Pay (price consumer will pay)
+    3. Calculations: Map each MU to a quantity
+    4. Table: MU as WTP
+    5. Graph: Plot as demand curve
     """
 
-    # Assume MU represents willingness to pay (₦ per unit)
-    WTP = [10, 8, 6, 4, 2, 0]   # at Q=1..6 (Q=7 excluded: negative WTP)
+    WTP = [10, 8, 6, 4, 2, 0]  # MU at Q=1..6
 
     def construct(self):
         self.camera.background_color = C_BG
 
-        title = Text("Diminishing MU  →  The Demand Curve", font_size=34, color=WHITE).to_edge(UP)
-        sub   = Text("MU = Marginal Utility = Willingness to Pay",
-                     font_size=19, color=GRAY, slant=ITALIC).next_to(title, DOWN, buff=0.08)
-        self.play(Write(title), FadeIn(sub))
+        # ── HEADER ──────────────────────────────────────────────────────────
+        main_title = Text("Diminishing MU  ↔  Demand Curve", font_size=38, color=WHITE).to_edge(UP)
+        subtitle = Text("MU is willingness to pay → this creates the demand curve",
+                       font_size=17, color=GRAY, slant=ITALIC).next_to(main_title, DOWN, buff=0.06)
 
-        # ── STEP 1: MU as WTP table ─────────────────────────────────────────────
-        step1 = Text("Step 1 — MU = Max Price Consumer Will Pay Per Unit",
-                     font_size=18, color=YELLOW).next_to(sub, DOWN, buff=0.18)
-        self.play(FadeIn(step1))
+        self.play(Write(main_title), FadeIn(subtitle))
+        self.wait(0.8)
 
-        rows = [[str(q), f"₦{mu}"] for q, mu in zip(range(1, 7), self.WTP)]
-        tbl = _table(
-            headers=["Qty (Q)", "MU / Willingness to Pay (₦)"],
-            rows=rows,
-            col_widths=[0.70, 2.20],
-            row_h=0.36, accent=C_MU,
-        )
-        tbl.next_to(step1, DOWN, buff=0.18)
+        # ── STEP 1: GIVEN ────────────────────────────────────────────────────
+        step1_title = _section_title("Step 1 — Given: Marginal Utility Data")
+        step1_title.next_to(subtitle, DOWN, buff=0.4)
+        self.play(FadeIn(step1_title))
 
-        for row in tbl:
-            self.play(FadeIn(row, shift=RIGHT * 0.1), run_time=0.30)
+        given = VGroup(
+            Text("Same data from Scene 1 (Law of Diminishing MU):", font_size=16, color=C_CALC),
+            Text("Q:  1   2   3   4   5   6", font_size=15, color=YELLOW),
+            Text("MU: 10  8   6   4   2   0  (₦ per unit)", font_size=15, color=YELLOW),
+        ).arrange(DOWN, buff=0.15).next_to(step1_title, DOWN, buff=0.25)
 
-        note1 = Text("As Q rises, MU falls — each extra unit is worth less",
-                     font_size=15, color=YELLOW).to_edge(DOWN, buff=0.55)
-        self.play(Write(note1))
+        for line in given:
+            self.play(FadeIn(line), run_time=0.15)
+
+        self.wait(0.8)
+        self.play(FadeOut(VGroup(step1_title, given)))
+        self.wait(0.3)
+
+        # ── STEP 2: CONCEPT ─────────────────────────────────────────────────
+        step2_title = _section_title("Step 2 — Key Insight: MU = WTP")
+        step2_title.next_to(subtitle, DOWN, buff=0.4)
+        self.play(FadeIn(step2_title))
+
+        concept = VGroup(
+            Text("Marginal Utility represents:", font_size=16, color=YELLOW),
+            Text("  → Maximum price consumer will pay for the NEXT unit", font_size=15, color=C_CALC),
+            Text("", font_size=8),
+            Text("Demand curve is derived from MU:", font_size=16, color=YELLOW),
+            Text("  → At each quantity, consumer demands at price = MU of that unit", font_size=15, color=C_CALC),
+        ).arrange(DOWN, buff=0.12, aligned_edge=LEFT).next_to(step2_title, DOWN, buff=0.25)
+
+        for line in concept:
+            self.play(FadeIn(line), run_time=0.15)
+
         self.wait(1.0)
+        self.play(FadeOut(VGroup(step2_title, concept)))
+        self.wait(0.3)
 
-        # ── STEP 2: demand curve from MU ───────────────────────────────────────
-        step2 = Text("Step 2 — MU Becomes the Demand Curve", font_size=19, color=YELLOW)
-        step2.next_to(sub, DOWN, buff=0.18)
-        self.play(FadeOut(step1), FadeOut(tbl), FadeOut(note1), FadeIn(step2))
+        # ── STEP 3: MAPPING ─────────────────────────────────────────────────
+        step3_title = _section_title("Step 3 — Map MU to Price Points")
+        step3_title.next_to(subtitle, DOWN, buff=0.4)
+        self.play(FadeIn(step3_title))
 
-        ax = Axes(
-            x_range=[0, 8, 1], y_range=[0, 12, 2],
-            x_length=5.8, y_length=4.0,
-            axis_config={"include_numbers": False, "include_tip": False},
-        ).shift(RIGHT * 0.5 + DOWN * 0.4)
+        mappings = VGroup()
+        for q, mu in zip(range(1, 7), self.WTP):
+            mapping = Text(f"At Q={q}: Consumer willing to pay ₦{mu}  →  Point ({q}, {mu}) on demand",
+                          font_size=14, color=C_CALC)
+            mappings.add(mapping)
 
-        x_lbl = _axis_label("Quantity (Q)").next_to(ax, DOWN, buff=0.05)
-        y_lbl = _axis_label("Price / MU (₦)").next_to(ax, LEFT, buff=0.05).rotate(PI/2)
-        x_tks = _x_nums(ax, list(range(1, 8)))
-        y_tks = _y_nums(ax, [0, 2, 4, 6, 8, 10])
-        self.play(Create(ax), FadeIn(x_lbl), FadeIn(y_lbl), FadeIn(x_tks), FadeIn(y_tks))
+        mappings.arrange(DOWN, buff=0.12).next_to(step3_title, DOWN, buff=0.25)
 
-        # plot MU/demand stepwise then smooth line
+        for mapping in mappings:
+            self.play(FadeIn(mapping), run_time=0.15)
+
+        self.wait(0.8)
+        self.play(FadeOut(VGroup(step3_title, mappings)))
+        self.wait(0.3)
+
+        # ── STEP 4: TABLE ────────────────────────────────────────────────────
+        step4_title = _section_title("Step 4 — MU = WTP Table")
+        step4_title.next_to(subtitle, DOWN, buff=0.4)
+        self.play(FadeIn(step4_title))
+
+        rows_wtp = [[str(q), f"₦{mu}"] for q, mu in zip(range(1, 7), self.WTP)]
+        tbl_wtp = _table(
+            headers=["Qty (Q)", "MU / WTP (₦)"],
+            rows=rows_wtp,
+            col_widths=[0.70, 2.00],
+            row_h=0.32, accent=C_MU
+        )
+        tbl_wtp.scale(0.90).next_to(step4_title, DOWN, buff=0.3)
+
+        self.play(FadeIn(tbl_wtp[0]))
+        for row in tbl_wtp[1:]:
+            self.play(FadeIn(row), run_time=0.15)
+
+        note_law = Text("As Q increases, MU (and thus demand price) falls → Law of Demand",
+                       font_size=14, color=YELLOW).next_to(tbl_wtp, DOWN, buff=0.2)
+        self.play(Write(note_law))
+
+        self.wait(0.8)
+        self.play(FadeOut(VGroup(step4_title, tbl_wtp, note_law)))
+        self.wait(0.3)
+
+        # ── STEP 5: GRAPH ────────────────────────────────────────────────────
+        step5_title = _section_title("Step 5 — The Demand Curve (MU Curve)")
+        step5_title.next_to(subtitle, DOWN, buff=0.4)
+        self.play(FadeIn(step5_title))
+
+        ax = Axes(x_range=[0, 8, 1], y_range=[0, 12, 2],
+                  x_length=5.8, y_length=4.0,
+                  axis_config={"include_numbers": False, "include_tip": False})
+        ax.shift(RIGHT * 0.4 + DOWN * 0.5)
+
+        x_tks = VGroup(*[Text(str(i), font_size=11, color=GRAY).next_to(ax.c2p(i, 0), DOWN, buff=0.05) for i in range(1, 8)])
+        y_tks = VGroup(*[Text(str(i), font_size=11, color=GRAY).next_to(ax.c2p(0, i), LEFT, buff=0.05) for i in [0, 2, 4, 6, 8, 10]])
+        x_lbl = Text("Quantity (Q)", font_size=13, color=GRAY).next_to(ax, DOWN, buff=0.07)
+        y_lbl = Text("Price / MU (₦)", font_size=13, color=GRAY).rotate(PI/2).next_to(ax, LEFT, buff=0.07)
+
+        self.play(Create(ax), FadeIn(x_tks), FadeIn(y_tks), FadeIn(x_lbl), FadeIn(y_lbl))
+
+        # Plot MU as demand
         pts_x = [0] + list(range(1, 7))
-        pts_y = [10] + self.WTP        # extended to Q=0 at MU=10 (y-intercept)
+        pts_y = [10] + self.WTP
 
         demand_curve = ax.plot_line_graph(
             pts_x, pts_y,
-            line_color=C_DEMAND, vertex_dot_radius=0.07,
+            line_color=C_DEMAND, vertex_dot_radius=0.08
         )
         self.play(Create(demand_curve["line_graph"]), run_time=1.0)
         self.play(FadeIn(demand_curve["vertex_dots"]))
 
-        d_lbl = Text("D = MU Curve", font_size=15, color=C_DEMAND).next_to(ax.c2p(5.5, 2.5), RIGHT, buff=0.06)
-        self.play(Write(d_lbl))
+        d_label = Text("D = MU Curve", font_size=14, color=C_DEMAND).next_to(ax.c2p(5.5, 2.5), RIGHT, buff=0.05)
+        self.play(Write(d_label))
 
-        # label each dot
+        # Label each point
+        self.wait(0.5)
         for q, mu in zip(range(1, 7), self.WTP):
-            dot_lbl = Text(f"({q},{mu})", font_size=11, color=GRAY)
-            dot_lbl.next_to(ax.c2p(q, mu), UR, buff=0.04)
-            self.add(dot_lbl)
+            pt_lbl = Text(f"({q},{mu})", font_size=10, color=GRAY)
+            pt_lbl.next_to(ax.c2p(q, mu), UR, buff=0.04)
+            self.add(pt_lbl)
 
-        final = Text(
-            "Law of Demand follows directly from Diminishing Marginal Utility",
-            font_size=16, color=YELLOW,
-        ).to_edge(DOWN, buff=0.55)
-        self.play(Write(final))
-        self.wait(2.0)
+        self.wait(0.5)
+
+        conclusion = Text(
+            "The demand curve directly follows from the Law of Diminishing Marginal Utility",
+            font_size=15, color=YELLOW
+        ).to_edge(DOWN, buff=0.7)
+        self.play(Write(conclusion))
+
+        self.wait(1.5)
 
         crumb = _breadcrumb("End of Consumer Behaviour series. Review: Utility → IC → Equilibrium → Surplus")
         self.play(FadeIn(crumb))
-        self.wait(1.5)
+        self.wait(1.0)
